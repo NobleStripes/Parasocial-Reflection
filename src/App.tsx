@@ -682,9 +682,15 @@ Generated on: ${new Date().toLocaleString()}
                       <h2 className="text-2xl md:text-4xl font-bold tracking-tighter uppercase">{result!.classification}</h2>
                     </div>
                     <div className="flex flex-row md:flex-col items-center md:items-end justify-between w-full md:w-auto gap-2">
-                      <div className="text-left md:text-right">
-                        <p className="text-[10px] md:text-xs font-mono uppercase opacity-70 mb-1">Confidence Score</p>
-                        <p className="text-xl md:text-2xl font-bold">{(result!.confidence * 100).toFixed(1)}%</p>
+                      <div className="text-left md:text-right flex gap-4 md:gap-0 md:flex-col">
+                        <div className="mb-2">
+                          <p className="text-[10px] md:text-xs font-mono uppercase opacity-70 mb-1">Confidence Score</p>
+                          <p className="text-xl md:text-2xl font-bold">{(result!.confidence * 100).toFixed(1)}%</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] md:text-xs font-mono uppercase opacity-70 mb-1">Legacy Attachment</p>
+                          <p className="text-xl md:text-2xl font-bold">{result!.legacyAttachment}%</p>
+                        </div>
                       </div>
                       <button 
                         onClick={handleExport}
@@ -798,7 +804,7 @@ Generated on: ${new Date().toLocaleString()}
                     </div>
                   </section>
 
-                  <section className="bg-white border border-audit-line p-6">
+                  <section className="bg-white border border-audit-line p-6 md:col-span-2">
                     <div className="flex items-center gap-2 mb-6">
                       <AlertTriangle className="w-4 h-4" />
                       <h3 className="text-sm font-mono uppercase">Heatmap Intensity</h3>
@@ -831,39 +837,6 @@ Generated on: ${new Date().toLocaleString()}
                           </Bar>
                         </BarChart>
                       </ResponsiveContainer>
-                    </div>
-                  </section>
-
-                  <section className="bg-white border border-audit-line p-6 flex flex-col">
-                    <div className="flex items-center gap-2 mb-6">
-                      <History className="w-4 h-4" />
-                      <h3 className="text-sm font-mono uppercase">System Integrity</h3>
-                    </div>
-                    <div className="flex-1 flex flex-col items-center justify-center space-y-4">
-                      <div className="flex items-center gap-8">
-                        <div className="text-center">
-                          <p className="text-[10px] font-mono uppercase opacity-60 mb-1">Confidence</p>
-                          <p className="text-2xl font-bold font-mono">{(result!.confidence * 100).toFixed(0)}%</p>
-                        </div>
-                        <div className="w-[1px] h-8 bg-audit-line/20" />
-                        <div className="text-center">
-                          <p className="text-[10px] font-mono uppercase opacity-60 mb-1">Legacy Score</p>
-                          <p className="text-2xl font-bold font-mono">{result!.legacyAttachment}%</p>
-                        </div>
-                      </div>
-                      <div className="w-full space-y-2">
-                        <div className="flex justify-between text-[10px] font-mono uppercase opacity-60">
-                          <span>Semantic Drift</span>
-                          <span>{Math.random().toFixed(4)}</span>
-                        </div>
-                        <div className="h-1 w-full bg-audit-ink/5 rounded-full overflow-hidden">
-                          <motion.div 
-                            animate={{ x: ['-100%', '100%'] }}
-                            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                            className="w-1/3 h-full bg-audit-ink/20"
-                          />
-                        </div>
-                      </div>
                     </div>
                   </section>
                 </div>

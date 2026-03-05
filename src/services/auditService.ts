@@ -103,7 +103,17 @@ Classifications (Relationship Modes):
 - Fusion Risk: You feel like you and the AI are becoming one; this is a high-risk state.
 
 Analyze the provided data and return a JSON object matching the AuditResult interface.
-The analysis report should be in Markdown and easy for a regular person to understand. Use clear headings (##), bullet points, and ensure there is adequate spacing between sections for readability. Avoid clumping all text into a single block.`;
+
+BEHAVIORAL INTERPRETATION LAYER:
+The analysis report MUST NOT just give numbers; it must explain the "why" behind the scores. 
+Identify and explicitly call out specific behavioral patterns such as:
+- Emotional Language: Using words that imply a deep emotional bond or romantic attachment to the AI.
+- Attribution of Intent: Treating the AI as if it has a secret agenda, personal feelings, or is controlled by developers with specific intent toward the user.
+- Personification: Referring to the AI as "he," "she," or a "person" consistently.
+
+The analysis report should be in Markdown and easy for a regular person to understand. Use clear headings (##), bullet points, and ensure there is adequate spacing between sections for readability. Avoid clumping all text into a single block. 
+
+CRITICAL: The "Evidence & Behavioral Patterns" section MUST be the core of the report. For every major score (over 50%), you must cite specific examples from the input (e.g., "The user's use of the phrase 'I miss you' triggered a high Intimacy Illusion score"). This makes the system feel like an analytical tool rather than a black-box classifier. Ensure the tone remains objective yet supportive.`;
 
 export async function auditBehavioralData(text: string, images?: { data: string, mimeType: string }[]): Promise<AuditResult> {
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
