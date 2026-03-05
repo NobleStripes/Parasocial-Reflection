@@ -6,6 +6,10 @@ A research-oriented analytical tool designed to facilitate self-reflection on pa
 
 This application is **not a medical or diagnostic tool**. It is designed strictly for **research, educational purposes, and personal self-reflection**. The "audit" and "analysis" provided are based on AI-driven heuristic patterns and should not be interpreted as professional psychological diagnosis or clinical advice. If you are experiencing significant distress or believe you have a digital addiction, please consult a licensed mental health professional.
 
+### ⚖️ Ethical Use & Data Privacy
+
+This tool is designed for personal reflection and academic research. Users should only audit transcripts or data they have the legal right to access. We strongly discourage using this tool to monitor or "audit" the private conversations of others without their explicit, informed consent. All data processing occurs locally in the browser or via the specified API endpoint; no personal chat data is stored by the application itself.
+
 ## 🛠 Design Philosophy
 
 The aesthetic of **Parasocial Audit** is built on three core pillars:
@@ -69,6 +73,18 @@ View your app in AI Studio: [https://ai.studio/apps/0c78913b-9d90-4b56-8d2b-9e49
 *   **Intelligence**: Google Gemini 3.1 Pro (via `@google/genai`).
 *   **Visualization**: Recharts (Radar and Bar charts).
 *   **Icons**: Lucide React.
+
+## 📜 License
+
+MIT License
+
+Copyright (c) 2024 Parasocial Audit Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ---
 *Disclaimer: This tool is for research and self-reflection purposes only. It is not a diagnostic instrument and is not a substitute for professional psychological counseling or medical advice.*
