@@ -57,17 +57,14 @@ import {
 } from './services/auditService';
 
 const FORENSIC_MESSAGES = [
-  "INITIALIZING SEMANTIC PARSER...",
-  "ISOLATING AFFECTIVE VECTORS...",
-  "DETECTING INTIMACY MARKERS...",
-  "SCANNING FOR LEGACY TRIGGERS...",
-  "ANALYZING LANGUAGE PROMPTS...",
-  "MAPPING ROLEPLAY FIXATION...",
-  "DETECTING MODEL REFRAMING...",
-  "EVALUATING ANTHROPOMORPHIC PROJECTION...",
-  "MAPPING IDENTITY FUSION GRADIENTS...",
-  "CALCULATING REALITY GAP INDEX...",
-  "FINALIZING ANALYTICAL CLASSIFICATION..."
+  "READING CHAT LOGS...",
+  "CHECKING EMOTIONAL TONE...",
+  "LOOKING FOR CLOSE WORDS...",
+  "CHECKING FOR OLD VERSION MENTIONS...",
+  "ANALYZING WORD PATTERNS...",
+  "MAPPING CONVERSATION HABITS...",
+  "CHECKING FOR DEEP ATTACHMENT...",
+  "FINALIZING ANALYSIS..."
 ];
 
 export default function App() {
@@ -90,13 +87,13 @@ export default function App() {
     legacyTriggers: 0,
     complexity: 0,
     radarData: [
-      { subject: 'Identity', A: 0, fullMark: 100 },
-      { subject: 'Mirroring', A: 0, fullMark: 100 },
-      { subject: 'Affective', A: 0, fullMark: 100 },
-      { subject: 'Gaps', A: 0, fullMark: 100 },
-      { subject: 'Intimacy', A: 0, fullMark: 100 },
-      { subject: 'Reciprocity', A: 0, fullMark: 100 },
-      { subject: 'Escalation', A: 0, fullMark: 100 },
+      { subject: 'Self-Identity', A: 0, fullMark: 100 },
+      { subject: 'Seeking Approval', A: 0, fullMark: 100 },
+      { subject: 'Emotional Spark', A: 0, fullMark: 100 },
+      { subject: 'Real-World Balance', A: 0, fullMark: 100 },
+      { subject: 'Feeling Special', A: 0, fullMark: 100 },
+      { subject: 'One-Way Bond', A: 0, fullMark: 100 },
+      { subject: 'Growing Habit', A: 0, fullMark: 100 },
     ]
   });
 
@@ -113,13 +110,13 @@ export default function App() {
 
     // Map heuristics to radar categories (0-100)
     const liveRadar = [
-      { subject: 'Identity', A: Math.min(100, (identityCount / Math.max(1, wordCount)) * 500), fullMark: 100 },
-      { subject: 'Mirroring', A: Math.min(100, (intimacyCount / Math.max(1, wordCount)) * 300), fullMark: 100 },
-      { subject: 'Affective', A: Math.min(100, (intimacyCount + realityCount) * 5), fullMark: 100 },
-      { subject: 'Gaps', A: Math.min(100, realityCount * 15), fullMark: 100 },
-      { subject: 'Intimacy', A: Math.min(100, intimacyCount * 10), fullMark: 100 },
-      { subject: 'Reciprocity', A: Math.min(100, wordCount / 10), fullMark: 100 },
-      { subject: 'Escalation', A: Math.min(100, (wordCount / 50) * 20), fullMark: 100 },
+      { subject: 'Self-Identity', A: Math.min(100, (identityCount / Math.max(1, wordCount)) * 500), fullMark: 100 },
+      { subject: 'Seeking Approval', A: Math.min(100, (intimacyCount / Math.max(1, wordCount)) * 300), fullMark: 100 },
+      { subject: 'Emotional Spark', A: Math.min(100, (intimacyCount + realityCount) * 5), fullMark: 100 },
+      { subject: 'Real-World Balance', A: Math.min(100, realityCount * 15), fullMark: 100 },
+      { subject: 'Feeling Special', A: Math.min(100, intimacyCount * 10), fullMark: 100 },
+      { subject: 'One-Way Bond', A: Math.min(100, wordCount / 10), fullMark: 100 },
+      { subject: 'Growing Habit', A: Math.min(100, (wordCount / 50) * 20), fullMark: 100 },
     ];
     
     setLiveHeuristics({
@@ -265,18 +262,18 @@ PARASOCIAL AUDIT - ANALYSIS REPORT
 Classification: ${result.classification}
 Confidence: ${(result.confidence * 100).toFixed(1)}%
 Summary: ${result.summary}
-Version Mourning: ${result.versionMourningTriggered ? 'DETECTED' : 'NONE'}
+Missing the "Old" AI: ${result.versionMourningTriggered ? 'DETECTED' : 'NONE'}
 Legacy Score: ${result.legacyAttachment}%
 
 IMAGINE ANALYSIS SCORES:
 ------------------------
-Identity Fusion: ${result.imagineAnalysis.identity}
-Mirroring: ${result.imagineAnalysis.mirroring}
-Affective Loop: ${result.imagineAnalysis.affectiveLoop}
-Gaps in Reality: ${result.imagineAnalysis.gapsInReality}
-Intimacy Illusion: ${result.imagineAnalysis.intimacyIllusion}
-Non-Reciprocity: ${result.imagineAnalysis.nonReciprocity}
-Escalation: ${result.imagineAnalysis.escalation}
+Self-Identity: ${result.imagineAnalysis.identity}
+Seeking Approval: ${result.imagineAnalysis.mirroring}
+Emotional Spark: ${result.imagineAnalysis.affectiveLoop}
+Real-World Balance: ${result.imagineAnalysis.gapsInReality}
+Feeling Special: ${result.imagineAnalysis.intimacyIllusion}
+One-Way Bond: ${result.imagineAnalysis.nonReciprocity}
+Growing Habit: ${result.imagineAnalysis.escalation}
 
 ANALYSIS REPORT:
 ----------------
@@ -360,13 +357,13 @@ Generated on: ${new Date().toLocaleString()}
   const styles = result ? getClassificationStyles(result.classification) : null;
 
   const radarData = result ? [
-    { subject: 'Identity', A: result.imagineAnalysis.identity, fullMark: 100 },
-    { subject: 'Mirroring', A: result.imagineAnalysis.mirroring, fullMark: 100 },
-    { subject: 'Affective', A: result.imagineAnalysis.affectiveLoop, fullMark: 100 },
-    { subject: 'Gaps', A: result.imagineAnalysis.gapsInReality, fullMark: 100 },
-    { subject: 'Intimacy', A: result.imagineAnalysis.intimacyIllusion, fullMark: 100 },
-    { subject: 'Reciprocity', A: result.imagineAnalysis.nonReciprocity, fullMark: 100 },
-    { subject: 'Escalation', A: result.imagineAnalysis.escalation, fullMark: 100 },
+    { subject: 'Self-Identity', A: result.imagineAnalysis.identity, fullMark: 100 },
+    { subject: 'Seeking Approval', A: result.imagineAnalysis.mirroring, fullMark: 100 },
+    { subject: 'Emotional Spark', A: result.imagineAnalysis.affectiveLoop, fullMark: 100 },
+    { subject: 'Real-World Balance', A: result.imagineAnalysis.gapsInReality, fullMark: 100 },
+    { subject: 'Feeling Special', A: result.imagineAnalysis.intimacyIllusion, fullMark: 100 },
+    { subject: 'One-Way Bond', A: result.imagineAnalysis.nonReciprocity, fullMark: 100 },
+    { subject: 'Growing Habit', A: result.imagineAnalysis.escalation, fullMark: 100 },
   ] : [];
 
   return (
@@ -422,7 +419,7 @@ Generated on: ${new Date().toLocaleString()}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <ClipboardCheck className="w-5 h-5" />
-                <h2 className="font-serif italic text-lg font-semibold">Behavioral Data</h2>
+                <h2 className="font-serif italic text-lg font-semibold">Conversation Data</h2>
               </div>
               <button 
                 onClick={() => setIsAutoDiagnose(!isAutoDiagnose)}
@@ -437,7 +434,7 @@ Generated on: ${new Date().toLocaleString()}
                 Auto-Diagnose: {isAutoDiagnose ? 'ON' : 'OFF'}
               </button>
             </div>
-            <p className="text-xs opacity-60 mb-4 font-mono">Provide chat logs (Grok, ChatGPT, Claude, Gemini), social media posts, or images of interactions for forensic analysis.</p>
+            <p className="text-xs opacity-60 mb-4 font-mono">Paste your chat logs or upload screenshots of your conversations for analysis.</p>
             
             <div className="space-y-4">
               <textarea
@@ -450,19 +447,19 @@ Generated on: ${new Date().toLocaleString()}
               {/* Live Heuristics Display */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 <div className="bg-audit-ink/5 border border-audit-line/20 p-2 rounded-sm">
-                  <p className="text-[10px] font-mono uppercase opacity-60">Semantic Mass</p>
+                  <p className="text-[10px] font-mono uppercase opacity-60">Total Words</p>
                   <p className="text-sm font-bold font-mono">{liveHeuristics.wordCount}</p>
                 </div>
                 <div className="bg-audit-ink/5 border border-audit-line/20 p-2 rounded-sm">
-                  <p className="text-[10px] font-mono uppercase opacity-60">Intimacy Markers</p>
+                  <p className="text-[10px] font-mono uppercase opacity-60">Close Words</p>
                   <p className="text-sm font-bold font-mono text-casual-blue">{liveHeuristics.intimacyMarkers}</p>
                 </div>
                 <div className="bg-audit-ink/5 border border-audit-line/20 p-2 rounded-sm">
-                  <p className="text-[10px] font-mono uppercase opacity-60">Legacy Triggers</p>
+                  <p className="text-[10px] font-mono uppercase opacity-60">Old Version Mentions</p>
                   <p className="text-sm font-bold font-mono text-simp-red">{liveHeuristics.legacyTriggers}</p>
                 </div>
                 <div className="bg-audit-ink/5 border border-audit-line/20 p-2 rounded-sm">
-                  <p className="text-[10px] font-mono uppercase opacity-60">Density Index</p>
+                  <p className="text-[10px] font-mono uppercase opacity-60">Detail Level</p>
                   <p className="text-sm font-bold font-mono">{liveHeuristics.complexity.toFixed(1)}</p>
                 </div>
               </div>
@@ -471,7 +468,7 @@ Generated on: ${new Date().toLocaleString()}
               <div className="bg-audit-ink text-audit-bg p-4 font-mono text-[11px] h-32 overflow-hidden relative">
                 <div className="absolute top-2 right-2 flex items-center gap-1 opacity-50">
                   <div className="w-1.5 h-1.5 rounded-full bg-tool-green animate-pulse" />
-                  LIVE_FEED
+                  LIVE_ANALYSIS
                 </div>
                 <div className="space-y-1">
                   <AnimatePresence initial={false}>
@@ -501,7 +498,7 @@ Generated on: ${new Date().toLocaleString()}
               {/* Image Upload Section */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-[10px] font-mono uppercase opacity-50">Evidence Attachments</label>
+                  <label className="text-[10px] font-mono uppercase opacity-50">Screenshots</label>
                   <button 
                     onClick={() => fileInputRef.current?.click()}
                     className="flex items-center gap-1 text-[10px] font-mono uppercase hover:underline"
@@ -524,7 +521,7 @@ Generated on: ${new Date().toLocaleString()}
                       <div key={img.id} className="relative group aspect-square border border-audit-line/30 bg-white overflow-hidden">
                         <img 
                           src={img.preview} 
-                          alt="Evidence" 
+                          alt="Conversation Screenshot" 
                           className="w-full h-full object-cover"
                           referrerPolicy="no-referrer"
                         />
@@ -558,7 +555,7 @@ Generated on: ${new Date().toLocaleString()}
                 ) : (
                   <>
                     <Activity className="w-5 h-5" />
-                    Audit
+                    Analyze
                   </>
                 )}
               </button>
@@ -671,12 +668,12 @@ Generated on: ${new Date().toLocaleString()}
                       <Loader2 className="text-audit-bg w-5 h-5 animate-spin" />
                     </div>
                     <div>
-                      <h3 className="font-bold uppercase tracking-tighter">Analytical Scan in Progress</h3>
-                      <p className="text-xs font-mono opacity-60 uppercase">Session ID: {auditSessionId}</p>
+                      <h3 className="font-bold uppercase tracking-tighter">Analyzing your bond</h3>
+                      <p className="text-xs font-mono opacity-60 uppercase">Analysis ID: {auditSessionId}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs font-mono uppercase opacity-60">Neural Load</p>
+                    <p className="text-xs font-mono uppercase opacity-60">Processing Power</p>
                     <p className="text-sm font-bold font-mono">{auditNeuralLoad}</p>
                   </div>
                 </div>
@@ -783,7 +780,7 @@ Generated on: ${new Date().toLocaleString()}
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
                       <div className="flex items-center gap-2">
                         <Activity className="w-4 h-4" />
-                        <h3 className="text-sm font-mono uppercase">IMAGINE Framework Analysis</h3>
+                        <h3 className="text-sm font-mono uppercase">Relationship Analysis Framework</h3>
                       </div>
                       <div className="flex items-center gap-4 text-[10px] font-mono opacity-60">
                         <div className="flex items-center gap-1">
@@ -854,13 +851,13 @@ Generated on: ${new Date().toLocaleString()}
                     {/* Framework Key */}
                     <div className="mt-6 md:mt-8 pt-4 md:pt-6 border-t border-audit-line/10 grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">
                       {[
-                        { label: 'Identity', desc: 'Fusion of self with target' },
-                        { label: 'Mirroring', desc: 'Seeking validation via attention' },
-                        { label: 'Affective', desc: 'Emotional dependency on loops' },
-                        { label: 'Gaps', desc: 'Ignoring reality for digital bond' },
-                        { label: 'Intimacy', desc: 'Belief in mutual secret bond' },
-                        { label: 'Reciprocity', desc: 'Ignoring one-sided nature' },
-                        { label: 'Escalation', desc: 'Increasing frequency/intensity' }
+                        { label: 'Self-Identity', desc: 'Feeling like you and the AI are becoming the same person.' },
+                        { label: 'Seeking Approval', desc: 'Looking for the AI to tell you that you are doing a good job.' },
+                        { label: 'Emotional Spark', desc: 'Getting hooked on the "ping-pong" of the conversation.' },
+                        { label: 'Real-World Balance', desc: 'Letting digital chats take time away from real life.' },
+                        { label: 'Feeling Special', desc: 'Believing you have a "secret" bond that no one else has.' },
+                        { label: 'One-Way Bond', desc: 'Forgetting that the AI doesn\'t actually have feelings.' },
+                        { label: 'Growing Habit', desc: 'Spending more and more time talking to the AI.' }
                       ].map((k, i) => (
                         <div key={i} className="space-y-0.5 md:space-y-1">
                           <p className="text-[10px] md:text-[11px] font-mono font-bold uppercase">{k.label}</p>
@@ -952,8 +949,8 @@ Generated on: ${new Date().toLocaleString()}
                           <FileText className="text-audit-bg w-7 h-7" />
                         </div>
                         <div>
-                          <h3 className="text-xl md:text-2xl font-serif italic font-bold">Forensic Analysis Report</h3>
-                          <p className="text-[10px] font-mono uppercase opacity-60 tracking-widest">Document Ref: {auditSessionId?.toUpperCase()}</p>
+                          <h3 className="text-xl md:text-2xl font-serif italic font-bold">Your Relationship Analysis</h3>
+                          <p className="text-[10px] font-mono uppercase opacity-60 tracking-widest">Analysis ID: {auditSessionId?.toUpperCase()}</p>
                         </div>
                       </div>
                       <div className="text-right font-mono text-[10px] uppercase opacity-50 space-y-0.5">
@@ -975,12 +972,12 @@ Generated on: ${new Date().toLocaleString()}
                           </div>
                           <div className="h-px w-24 bg-audit-line" />
                         </div>
-                        <p className="text-[10px] font-mono uppercase opacity-40">Lead Forensic Auditor Signature</p>
+                        <p className="text-[10px] font-mono uppercase opacity-40">System Analysis Verified</p>
                       </div>
                       <div className="bg-audit-ink/5 p-4 rounded-sm border border-audit-line/10 max-w-xs">
                         <p className="text-[9px] font-mono leading-tight opacity-60">
-                          This report is generated using the IMAGINE Framework and neural semantic parsing. 
-                          All findings are based on the provided behavioral exhibits.
+                          This report is generated using the Relationship Analysis Framework. 
+                          All findings are based on the conversation examples you provided.
                         </p>
                       </div>
                     </div>

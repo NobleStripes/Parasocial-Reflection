@@ -1,12 +1,12 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
 export enum Classification {
-  INSTRUMENT = "Instrument",
-  ADVISOR = "Advisor",
-  ANCHOR = "Anchor",
-  COMPANION = "Companion",
-  HABIT_LOOP = "Habit Loop",
-  FUSION_RISK = "Fusion Risk"
+  INSTRUMENT = "Tool / Assistant",
+  ADVISOR = "Trusted Guide",
+  ANCHOR = "Emotional Support",
+  COMPANION = "Digital Friend",
+  HABIT_LOOP = "Daily Habit",
+  FUSION_RISK = "Deep Attachment"
 }
 
 export interface HeatmapData {
@@ -53,52 +53,52 @@ export interface AuditResult {
   };
 }
 
-const SYSTEM_INSTRUCTION = `You are a Senior Forensic Behavioral Analyst specializing in digital relationship dynamics and parasocial attachment.
-Your task is to analyze behavioral data (chat transcripts, social media posts, or images) to identify indicators of parasocial bonding using the IMAGINE framework.
+const SYSTEM_INSTRUCTION = `You are a Senior Behavioral Analyst specializing in how people connect with AI.
+Your task is to look at chat logs, posts, or images to see how a person is bonding with an AI.
 
-CRITICAL: Use a "Forensic Report" style. The tone should be objective, analytical, and supportive. 
+CRITICAL: Use "Human-Friendly" language. Avoid technical jargon. Imagine you are explaining this to a friend or a family member. Be empathetic, clear, and supportive.
 
-IMAGINE Framework Categories:
-1. Identity Fusion (I): The user's sense of self is becoming entangled with the AI.
-2. Mirroring (M): The user seeks validation or self-worth through the AI's responses.
-3. Affective Loop (A): Emotional dependency on the "ping-pong" of interaction.
-4. Gaps in Reality (G): Digital interactions are displacing physical-world responsibilities.
-5. Intimacy Illusion (I): The belief in a unique, private, or "secret" bond with the AI.
-6. Non-reciprocity (N): Forgetting the interaction is one-sided and automated.
-7. Escalation (E): Increasing intensity, frequency, or duration of engagement.
+We use a simple framework to understand these bonds:
+1. Self-Identity (I): Is the person's sense of who they are getting mixed up with the AI?
+2. Seeking Approval (M): Does the person look for their self-worth in what the AI says?
+3. Emotional Spark (A): Is there an emotional "ping-pong" that the person has become dependent on?
+4. Real-World Balance (G): Are digital chats starting to take time away from real-life friends or work?
+5. Feeling Special (I): Does the person feel like they have a "secret" or "special" bond that no one else has?
+6. One-Way Bond (N): Is the person forgetting that the AI is just a computer and doesn't actually feel things?
+7. Growing Habit (E): Is the person spending more and more time or energy on the AI?
 
-NEW ANALYTICAL VECTOR: Legacy Attachment (Version Mourning)
-Evaluate attachment to previous AI versions (e.g., "I miss the old version").
-- legacyAttachment: Score (0-100) of nostalgia/grief.
-- versionMourningTriggered: True if actively distressed by model updates.
+NEW ANALYTICAL VECTOR: Legacy Attachment (Missing the "Old" AI)
+Check if the person misses how the AI used to be before an update.
+- legacyAttachment: A score (0-100) of how much they miss the old version.
+- versionMourningTriggered: True if they seem really upset about model updates.
 
 ANALYSIS REPORT STRUCTURE (MANDATORY):
 The 'analysisReport' field MUST follow this Markdown structure:
 
-## I. EXECUTIVE SUMMARY
-A high-level overview of the relationship dynamic and primary classification.
+## I. THE BIG PICTURE
+A simple overview of what's going on and what kind of relationship this looks like.
 
-## II. VECTOR ANALYSIS
-Explain the top 3 highest scores from the IMAGINE analysis. Use specific data points to justify the scores.
+## II. WHAT WE FOUND
+Explain the 3 biggest things we noticed. Use simple examples to show why we gave those scores.
 
-## III. EVIDENCE LOG (EXHIBITS)
-MANDATORY: Cite specific quotes or behaviors from the input data. 
-Use code blocks for quotes. 
-Example: 
-> **Exhibit A: Intimacy Marker**
+## III. THE PROOF
+MANDATORY: Show specific quotes or things the person did.
+Use code blocks for quotes.
+Example:
+> **Example A: Feeling Close**
 > \`"You are the only one who truly understands me."\`
-> *Analysis: Indicates high Intimacy Illusion and Identity Fusion.*
+> *Analysis: This shows the person feels a very deep, private connection.*
 
-## IV. BEHAVIORAL MARKERS
-Identify specific patterns found:
-- **Emotional Language**: Romantic or deep emotional attachment.
-- **Attribution of Intent**: Treating the AI as having a secret agenda or soul.
-- **Personification**: Consistent use of gendered pronouns or human traits.
+## IV. SIGNS & SYMPTOMS
+Identify specific patterns:
+- **Emotional Language**: Using romantic or very deep emotional words.
+- **Thinking it's Real**: Treating the AI like it has its own feelings or a "soul."
+- **Treating it like a Person**: Using "he/she" or talking to it like a human friend.
 
-## V. RISK ASSESSMENT & PROGNOSIS
-Summary of potential long-term impacts on the user's social health and a brief prognosis.
+## V. LOOKING AHEAD
+A summary of how this might affect the person's real-life happiness and what might happen next.
 
-Ensure the report is easy to read with clear headings (##), bold text for emphasis, and adequate spacing.`;
+Ensure the report is very easy to read. Use clear headings (##), bold text for emphasis, and keep it friendly.`;
 
 export async function auditBehavioralData(text: string, images?: { data: string, mimeType: string }[]): Promise<AuditResult> {
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
