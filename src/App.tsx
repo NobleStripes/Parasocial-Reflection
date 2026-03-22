@@ -23,7 +23,8 @@ import {
   Upload,
   History,
   Ghost,
-  Eye
+  Eye,
+  Download
 } from 'lucide-react';
 import { 
   Radar, 
@@ -40,6 +41,8 @@ import {
   Cell
 } from 'recharts';
 import Markdown from 'react-markdown';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { cn } from './lib/utils';
 import { 
   INTIMACY_WORDS, 
@@ -70,6 +73,7 @@ export default function App() {
   const [transcript, setTranscript] = useState('');
   const [images, setImages] = useState<{ data: string, mimeType: string, id: string, preview: string }[]>([]);
   const [isReflecting, setIsReflecting] = useState(false);
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [reflectionSessionId, setReflectionSessionId] = useState('');
   const [reflectionNeuralLoad, setReflectionNeuralLoad] = useState('');
   const [result, setResult] = useState<ReflectionResult | null>(null);
@@ -309,6 +313,43 @@ Generated on: ${new Date().toLocaleString()}
     URL.revokeObjectURL(url);
   };
 
+  const handleExportPDF = async () => {
+    if (!result) return;
+    
+    const reportElement = document.getElementById('reflection-report-container');
+    if (!reportElement) return;
+
+    setIsExportingPDF(true);
+    try {
+      // Small delay to allow any animations to settle
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const canvas = await html2canvas(reportElement, {
+        scale: 2, // Higher scale for better quality
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#E4E3E0', // Match theme background
+        windowWidth: reportElement.scrollWidth,
+        windowHeight: reportElement.scrollHeight
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'px',
+        format: [canvas.width, canvas.height]
+      });
+
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+      pdf.save(`parasocial_reflection_${result.classification.toLowerCase().replace(' ', '_')}.pdf`);
+    } catch (err) {
+      console.error('PDF Export Error:', err);
+      setError('Failed to export PDF. Please try again.');
+    } finally {
+      setIsExportingPDF(false);
+    }
+  };
+
   const getClassificationStyles = (classification: Classification) => {
     switch (classification) {
       case Classification.FUSION_RISK: 
@@ -378,9 +419,9 @@ Generated on: ${new Date().toLocaleString()}
   return (
     <div className="min-h-[100dvh] bg-reflection-bg selection:bg-reflection-ink selection:text-reflection-bg overflow-x-hidden">
       {/* Header */}
-      <header className="border-b border-reflection-line p-6 flex justify-between items-center bg-white/50 backdrop-blur-sm sticky top-0 z-50">
+      <header className="border-b border-reflection-line p-4 md:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-reflection-ink flex items-center justify-center rounded-sm relative overflow-hidden">
+          <div className="w-10 h-10 bg-reflection-ink flex items-center justify-center rounded-sm relative overflow-hidden shrink-0">
             <ShieldAlert className="text-reflection-bg w-6 h-6 relative z-10" />
             <motion.div 
               animate={{ 
@@ -395,41 +436,41 @@ Generated on: ${new Date().toLocaleString()}
             />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tighter uppercase">Parasocial Reflection</h1>
-            <p className="text-xs font-mono opacity-70 uppercase tracking-widest">Relationship Reflection Tool v2.0.25</p>
+            <h1 className="text-lg md:text-xl font-bold tracking-tighter uppercase leading-tight">Parasocial Reflection</h1>
+            <p className="text-[10px] font-mono opacity-70 uppercase tracking-widest">Relationship Tool v2.0.25</p>
           </div>
         </div>
-        <div className="flex gap-4 text-[10px] font-mono uppercase opacity-80 overflow-x-auto max-w-full md:max-w-[50%] no-scrollbar pb-1 md:pb-0">
-          <div className="flex items-center gap-1 shrink-0">
+        <div className="flex gap-4 text-[9px] md:text-[10px] font-mono uppercase opacity-80 overflow-x-auto max-w-full no-scrollbar pb-1 md:pb-0 mask-fade-right">
+          <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap">
             <div className="w-2 h-2 rounded-full bg-tool-green" /> Instrument
           </div>
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap">
             <div className="w-2 h-2 rounded-full bg-tool-green opacity-50" /> Advisor
           </div>
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap">
             <div className="w-2 h-2 rounded-full bg-casual-blue" /> Anchor
           </div>
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap">
             <div className="w-2 h-2 rounded-full bg-casual-blue opacity-50" /> Companion
           </div>
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap">
             <div className="w-2 h-2 rounded-full bg-simp-red opacity-50" /> Habit Loop
           </div>
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap">
             <div className="w-2 h-2 rounded-full bg-simp-red" /> Fusion Risk
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <main className="max-w-7xl mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
         {/* Left Column: Input */}
         <div className="lg:col-span-5 space-y-6">
-          <section className="bg-white border border-reflection-line p-4 md:p-6 shadow-[4px_4px_0px_0px_rgba(20,20,20,1)]">
-            <div className="flex items-center justify-between mb-4">
+          <section className="bg-white border border-reflection-line p-5 md:p-6 shadow-[4px_4px_0px_0px_rgba(20,20,20,1)]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
               <div className="flex items-center gap-2">
                 <ClipboardCheck className="w-5 h-5" />
                 <h2 className="font-serif italic text-lg font-semibold">Conversation Data</h2>
-                <div className="hidden sm:flex items-center gap-1.5 ml-2 px-2 py-0.5 bg-reflection-ink/5 rounded-full border border-reflection-line/10">
+                <div className="flex items-center gap-1.5 ml-2 px-2 py-0.5 bg-reflection-ink/5 rounded-full border border-reflection-line/10">
                   <motion.div 
                     animate={isReflecting || isAutoReflectPending ? { 
                       scale: [1, 1.2, 1],
@@ -451,7 +492,7 @@ Generated on: ${new Date().toLocaleString()}
               <button 
                 onClick={() => setIsAutoReflect(!isAutoReflect)}
                 className={cn(
-                  "flex items-center gap-1.5 px-2 py-1 rounded-sm border text-[10px] font-mono uppercase transition-all relative overflow-hidden",
+                  "flex items-center justify-center gap-1.5 px-3 py-2 rounded-sm border text-[10px] font-mono uppercase transition-all relative overflow-hidden min-h-[36px]",
                   isAutoReflect 
                     ? "bg-tool-green/10 border-tool-green text-tool-green" 
                     : "bg-reflection-ink/5 border-reflection-line/30 text-reflection-ink/50"
@@ -576,12 +617,12 @@ Generated on: ${new Date().toLocaleString()}
               </div>
 
               {/* Image Upload Section */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="text-[10px] font-mono uppercase opacity-50">Screenshots</label>
                   <button 
                     onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center gap-1 text-[10px] font-mono uppercase hover:underline"
+                    className="flex items-center gap-1.5 text-[10px] font-mono uppercase hover:underline py-1 px-2 bg-reflection-ink/5 rounded-sm"
                   >
                     <Upload className="w-3 h-3" /> Add Image
                   </button>
@@ -596,9 +637,9 @@ Generated on: ${new Date().toLocaleString()}
                 </div>
                 
                 {images.length > 0 && (
-                  <div className="grid grid-cols-3 gap-2 p-2 border border-reflection-line/20 bg-reflection-bg/10 rounded-sm">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 p-3 border border-reflection-line/20 bg-reflection-bg/10 rounded-sm">
                     {images.map(img => (
-                      <div key={img.id} className="relative group aspect-square border border-reflection-line/30 bg-white overflow-hidden">
+                      <div key={img.id} className="relative group aspect-square border border-reflection-line/30 bg-white overflow-hidden rounded-sm">
                         <img 
                           src={img.preview} 
                           alt="Conversation Screenshot" 
@@ -607,9 +648,9 @@ Generated on: ${new Date().toLocaleString()}
                         />
                         <button 
                           onClick={() => removeImage(img.id)}
-                          className="absolute top-1 right-1 p-1 bg-reflection-ink text-reflection-bg opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute top-1 right-1 p-1.5 bg-reflection-ink text-reflection-bg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity rounded-sm"
                         >
-                          <X className="w-3 h-3" />
+                          <X className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     ))}
@@ -618,19 +659,19 @@ Generated on: ${new Date().toLocaleString()}
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 mt-4">
+            <div className="grid grid-cols-2 gap-3 mt-6">
               <button
                 onClick={() => handleReflect()}
                 disabled={isReflecting || (!transcript.trim() && images.length === 0)}
                 className={cn(
-                  "py-4 flex items-center justify-center gap-2 font-bold uppercase tracking-widest transition-all",
-                  isReflecting ? "bg-reflection-ink/50 cursor-not-allowed" : "bg-reflection-ink text-reflection-bg hover:invert"
+                  "py-4 md:py-5 flex items-center justify-center gap-2 font-bold uppercase tracking-widest transition-all rounded-sm",
+                  isReflecting ? "bg-reflection-ink/50 cursor-not-allowed" : "bg-reflection-ink text-reflection-bg hover:invert active:scale-[0.98]"
                 )}
               >
                 {isReflecting ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    ...
+                    <span className="hidden sm:inline">Reflecting</span>
                   </>
                 ) : (
                   <>
@@ -642,7 +683,7 @@ Generated on: ${new Date().toLocaleString()}
               <button
                 onClick={handleClear}
                 disabled={isReflecting || (!transcript && images.length === 0 && !result)}
-                className="py-4 border border-reflection-line flex items-center justify-center gap-2 font-bold uppercase tracking-widest hover:bg-reflection-ink hover:text-reflection-bg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                className="py-4 md:py-5 border border-reflection-line flex items-center justify-center gap-2 font-bold uppercase tracking-widest hover:bg-reflection-ink hover:text-reflection-bg transition-all disabled:opacity-30 disabled:cursor-not-allowed rounded-sm active:scale-[0.98]"
               >
                 Clear
               </button>
@@ -783,40 +824,55 @@ Generated on: ${new Date().toLocaleString()}
             ) : (
               <motion.div
                 key="result"
+                id="reflection-report-container"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="space-y-6"
+                className="space-y-6 p-4 -m-4" // Added padding and negative margin to capture shadows/borders correctly
               >
                 {/* Classification Header */}
                 <div className={cn(
-                  "border-2 p-4 md:p-6 transition-all duration-500",
+                  "border-2 p-5 md:p-6 transition-all duration-500",
                   styles?.bg,
                   styles?.border,
                   styles?.text,
                   styles?.shadow
                 )}>
-                  <div className="flex flex-col md:flex-row justify-between items-start gap-4">
-                    <div className="space-y-1">
+                  <div className="flex flex-col md:flex-row justify-between items-start gap-6">
+                    <div className="space-y-1.5">
                       <p className="text-[10px] font-mono uppercase opacity-70 tracking-widest">Relationship Mode</p>
-                      <h2 className="text-2xl md:text-3xl font-bold tracking-tighter uppercase leading-none">{result!.classification}</h2>
+                      <h2 className="text-3xl md:text-4xl font-bold tracking-tighter uppercase leading-none">{result!.classification}</h2>
                     </div>
                     
-                    <div className="grid grid-cols-2 md:flex md:flex-row gap-2 w-full md:w-auto">
-                      <div className="bg-white/40 backdrop-blur-sm border border-current/20 p-2 rounded-sm min-w-[80px]">
+                    <div className="grid grid-cols-2 sm:flex sm:flex-row gap-3 w-full sm:w-auto" data-html2canvas-ignore>
+                      <div className="bg-white/40 backdrop-blur-sm border border-current/20 p-2.5 rounded-sm min-w-[90px] flex flex-col justify-center">
                         <p className="text-[8px] font-mono uppercase opacity-70 mb-0.5">Confidence</p>
-                        <p className="text-base font-bold font-mono">{(result!.confidence * 100).toFixed(1)}%</p>
+                        <p className="text-lg font-bold font-mono leading-none">{(result!.confidence * 100).toFixed(1)}%</p>
                       </div>
-                      <div className="bg-white/40 backdrop-blur-sm border border-current/20 p-2 rounded-sm min-w-[80px]">
+                      <div className="bg-white/40 backdrop-blur-sm border border-current/20 p-2.5 rounded-sm min-w-[90px] flex flex-col justify-center">
                         <p className="text-[8px] font-mono uppercase opacity-70 mb-0.5">Legacy</p>
-                        <p className="text-base font-bold font-mono">{result!.legacyAttachment}%</p>
+                        <p className="text-lg font-bold font-mono leading-none">{result!.legacyAttachment}%</p>
                       </div>
-                      <button 
-                        onClick={handleExport}
-                        className="col-span-2 md:col-auto flex items-center justify-center gap-1.5 px-3 py-2 bg-reflection-ink text-reflection-bg text-[10px] font-mono uppercase hover:invert transition-all shadow-[2px_2px_0px_0px_rgba(20,20,20,1)]"
-                      >
-                        <FileText className="w-3.5 h-3.5" />
-                        Export
-                      </button>
+                      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-row col-span-2 sm:col-auto">
+                        <button 
+                          onClick={handleExport}
+                          className="flex items-center justify-center gap-2 px-4 py-3 bg-reflection-ink text-reflection-bg text-[11px] font-mono uppercase hover:invert transition-all shadow-[2px_2px_0px_0px_rgba(20,20,20,1)] active:scale-95"
+                        >
+                          <FileText className="w-4 h-4" />
+                          TXT
+                        </button>
+                        <button 
+                          onClick={handleExportPDF}
+                          disabled={isExportingPDF}
+                          className="flex items-center justify-center gap-2 px-4 py-3 bg-reflection-ink text-reflection-bg text-[11px] font-mono uppercase hover:invert transition-all shadow-[2px_2px_0px_0px_rgba(20,20,20,1)] disabled:opacity-50 active:scale-95"
+                        >
+                          {isExportingPDF ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Download className="w-4 h-4" />
+                          )}
+                          PDF
+                        </button>
+                      </div>
                     </div>
                   </div>
                   
@@ -864,14 +920,14 @@ Generated on: ${new Date().toLocaleString()}
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 items-center">
-                      <div className="h-64 w-full relative">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 items-center">
+                      <div className="h-72 sm:h-80 md:h-64 w-full relative">
                         <ResponsiveContainer width="100%" height="100%">
-                          <RadarChart cx="50%" cy="50%" outerRadius="65%" data={radarData}>
+                          <RadarChart cx="50%" cy="50%" outerRadius="75%" data={radarData}>
                             <PolarGrid stroke="#141414" strokeOpacity={0.1} />
                             <PolarAngleAxis 
                               dataKey="subject" 
-                              tick={{ fontSize: 9, fontFamily: 'JetBrains Mono', fontWeight: 700, fill: '#141414' }} 
+                              tick={{ fontSize: 8, fontFamily: 'JetBrains Mono', fontWeight: 700, fill: '#141414' }} 
                             />
                             <Radar
                               name="Reflection"
@@ -892,15 +948,15 @@ Generated on: ${new Date().toLocaleString()}
                         />
                       </div>
 
-                      <div className="space-y-2 md:space-y-3">
+                      <div className="space-y-3 md:space-y-3 px-2 sm:px-0">
                         {radarData.map((item, idx) => (
-                          <div key={idx} className="flex items-center justify-between border-b border-reflection-line/10 pb-1.5 md:pb-2">
+                          <div key={idx} className="flex items-center justify-between border-b border-reflection-line/10 pb-2 md:pb-2">
                             <div className="flex flex-col">
                               <span className="text-[10px] md:text-xs font-mono font-bold uppercase">{item.subject}</span>
                               <span className="text-[9px] md:text-[10px] opacity-60 uppercase">Vector {idx + 1}</span>
                             </div>
-                            <div className="flex items-center gap-2 md:gap-3">
-                              <div className="w-16 md:w-24 h-1.5 bg-reflection-ink/5 rounded-full overflow-hidden">
+                            <div className="flex items-center gap-3 md:gap-3">
+                              <div className="w-20 sm:w-32 md:w-24 h-2 bg-reflection-ink/5 rounded-full overflow-hidden">
                                 <motion.div 
                                   initial={{ width: 0 }}
                                   animate={{ width: `${item.A}%` }}
@@ -911,7 +967,7 @@ Generated on: ${new Date().toLocaleString()}
                                   )}
                                 />
                               </div>
-                              <span className="text-[10px] md:text-xs font-mono font-bold w-8 text-right">{item.A}%</span>
+                              <span className="text-[11px] md:text-xs font-mono font-bold w-10 text-right">{item.A}%</span>
                             </div>
                           </div>
                         ))}
@@ -942,15 +998,15 @@ Generated on: ${new Date().toLocaleString()}
                       <AlertTriangle className="w-4 h-4" />
                       <h3 className="text-sm font-mono uppercase">Heatmap Intensity</h3>
                     </div>
-                    <div className="h-64 w-full">
+                    <div className="h-72 sm:h-80 md:h-64 w-full">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart layout="vertical" data={result!.heatmap} margin={{ left: 20, right: 20 }}>
+                        <BarChart layout="vertical" data={result!.heatmap} margin={{ left: 10, right: 30, top: 10, bottom: 10 }}>
                           <XAxis type="number" hide domain={[0, 100]} />
                           <YAxis 
                             dataKey="category" 
                             type="category" 
-                            tick={{ fontSize: 9, fontFamily: 'JetBrains Mono', fill: '#141414' }} 
-                            width={100} 
+                            tick={{ fontSize: 8, fontFamily: 'JetBrains Mono', fill: '#141414' }} 
+                            width={80} 
                             axisLine={false}
                             tickLine={false}
                           />
@@ -1006,27 +1062,27 @@ Generated on: ${new Date().toLocaleString()}
                 </section>
 
                 {/* Analysis Report */}
-                <section className="bg-white border border-reflection-line p-4 md:p-10 relative overflow-hidden shadow-[12px_12px_0px_0px_rgba(20,20,20,0.05)]">
+                <section className="bg-white border border-reflection-line p-5 sm:p-8 md:p-10 relative overflow-hidden shadow-[12px_12px_0px_0px_rgba(20,20,20,0.05)]">
                   {/* Reflection Watermark */}
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-[0.03] select-none rotate-[-35deg] whitespace-nowrap">
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-[0.02] select-none rotate-[-35deg] whitespace-nowrap hidden sm:block">
                     <p className="text-[120px] font-bold font-mono tracking-[0.5em]">CONFIDENTIAL</p>
                   </div>
 
                   <div className="relative z-10">
-                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 border-b-2 border-reflection-line pb-6 gap-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-reflection-ink flex items-center justify-center rounded-sm">
+                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 border-b-2 border-reflection-line pb-6 gap-6">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-reflection-ink flex items-center justify-center rounded-sm shrink-0">
                           <FileText className="text-reflection-bg w-7 h-7" />
                         </div>
                         <div>
-                          <h3 className="text-xl md:text-2xl font-serif italic font-bold">Your Relationship Analysis</h3>
-                          <p className="text-[10px] font-mono uppercase opacity-60 tracking-widest">Reflection ID: {reflectionSessionId?.toUpperCase()}</p>
+                          <h3 className="text-xl md:text-2xl font-serif italic font-bold leading-tight">Your Relationship Analysis</h3>
+                          <p className="text-[9px] md:text-[10px] font-mono uppercase opacity-60 tracking-widest">Reflection ID: {reflectionSessionId?.toUpperCase()}</p>
                         </div>
                       </div>
-                      <div className="text-right font-mono text-[10px] uppercase opacity-50 space-y-0.5">
+                      <div className="flex md:flex-col gap-4 md:gap-0.5 text-left md:text-right font-mono text-[9px] md:text-[10px] uppercase opacity-50">
                         <p>Date: {new Date().toLocaleDateString()}</p>
-                        <p>Status: Finalized</p>
-                        <p>Security: Level 4</p>
+                        <p className="hidden md:block">Status: Finalized</p>
+                        <p className="hidden md:block">Security: Level 4</p>
                       </div>
                     </div>
 
@@ -1059,28 +1115,29 @@ Generated on: ${new Date().toLocaleString()}
                 </section>
 
                 {/* Wellness Plan */}
-                <section className="bg-reflection-ink text-reflection-bg border border-reflection-line p-4 md:p-8 relative overflow-hidden">
+                <section className="bg-reflection-ink text-reflection-bg border border-reflection-line p-5 md:p-8 relative overflow-hidden">
                   <div className="absolute top-0 right-0 p-4 opacity-10">
                     <Leaf className="w-16 md:w-24 h-16 md:h-24 rotate-12" />
                   </div>
                   <div className="relative z-10">
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
                       <div className="flex items-center gap-2">
                         <Leaf className="w-5 h-5 text-tool-green" />
-                        <h3 className="text-base md:text-lg font-bold uppercase tracking-tighter">
+                        <h3 className="text-base md:text-lg font-bold uppercase tracking-tighter leading-tight">
                           {result!.wellnessPlan.title}
                         </h3>
                       </div>
                       <button 
                         onClick={() => setIsCustomizingPlan(!isCustomizingPlan)}
-                        className="text-[10px] font-mono uppercase bg-white/10 hover:bg-white/20 px-3 py-1 border border-white/10 transition-colors"
+                        data-html2canvas-ignore
+                        className="text-[10px] font-mono uppercase bg-white/10 hover:bg-white/20 px-4 py-2 border border-white/10 transition-colors rounded-sm self-start sm:self-auto"
                       >
                         {isCustomizingPlan ? 'Close Library' : 'Personalize Plan'}
                       </button>
                     </div>
                     
                     <div className="space-y-4">
-                      <div className="p-3 md:p-4 border border-reflection-bg/20 bg-white/5 font-mono text-xs md:text-sm leading-relaxed italic">
+                      <div className="p-4 border border-reflection-bg/20 bg-white/5 font-mono text-xs md:text-sm leading-relaxed italic rounded-sm">
                         <span className="text-tool-green font-bold uppercase mr-2">Note:</span>
                         {result!.wellnessPlan.rationale}
                       </div>
@@ -1098,7 +1155,7 @@ Generated on: ${new Date().toLocaleString()}
                               <h4 className="text-xs font-mono uppercase text-tool-green">Wellness Library</h4>
                               <p className="text-[10px] opacity-60">Select 3-5 steps to build your personalized wellness guide.</p>
                             </div>
-                            <div className="grid grid-cols-1 gap-3">
+                            <div className="grid grid-cols-1 gap-4">
                               {result!.wellnessPlan.library.map((rec, idx) => {
                                 const isSelected = selectedRecommendations.some(s => s.protocol === rec.protocol);
                                 return (
@@ -1112,19 +1169,19 @@ Generated on: ${new Date().toLocaleString()}
                                       }
                                     }}
                                     className={cn(
-                                      "flex items-start gap-3 p-3 cursor-pointer border transition-all",
+                                      "flex items-start gap-4 p-4 cursor-pointer border transition-all rounded-sm",
                                       isSelected ? "bg-white/20 border-tool-green" : "bg-white/5 border-white/10 opacity-60 hover:opacity-100"
                                     )}
                                   >
                                     <div className={cn(
-                                      "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5",
+                                      "w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5",
                                       isSelected ? "bg-tool-green text-reflection-ink" : "bg-white/20 text-white"
                                     )}>
                                       {isSelected ? '✓' : idx + 1}
                                     </div>
-                                    <div className="space-y-1">
-                                      <p className="text-xs font-mono font-medium">{rec.text}</p>
-                                      <span className="text-[9px] font-mono uppercase text-tool-green opacity-80">Reference: {rec.protocol}</span>
+                                    <div className="space-y-1.5">
+                                      <p className="text-sm font-mono font-medium leading-snug">{rec.text}</p>
+                                      <span className="text-[10px] font-mono uppercase text-tool-green opacity-80 font-bold">Reference: {rec.protocol}</span>
                                     </div>
                                   </div>
                                 );
@@ -1177,7 +1234,7 @@ Generated on: ${new Date().toLocaleString()}
                   </div>
                 </section>
 
-                <div className="flex justify-center pb-12">
+                <div className="flex justify-center pb-12" data-html2canvas-ignore>
                   <button 
                     onClick={() => {
                       setResult(null);

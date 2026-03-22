@@ -74,6 +74,19 @@
   @apply bg-reflection-ink text-reflection-bg px-1.5 py-0.5 rounded-sm font-mono text-[0.85em] md:text-[0.9em];
 }
 
+.mask-fade-right {
+  mask-image: linear-gradient(to right, black 85%, transparent 100%);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 .supportive-report pre {
   @apply bg-reflection-ink text-reflection-bg p-3 rounded-sm font-mono text-[10px] md:text-xs my-4 overflow-x-auto border-l-4 border-tool-green md:p-4 md:my-6;
 }
