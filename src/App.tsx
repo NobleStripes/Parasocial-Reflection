@@ -10,7 +10,7 @@ import {
   ClipboardCheck, 
   FileText, 
   AlertTriangle, 
-  Leaf, 
+  Fingerprint, 
   Loader2, 
   ChevronRight, 
   ShieldAlert, 
@@ -22,9 +22,12 @@ import {
   X, 
   Upload,
   History,
-  Ghost,
-  Eye,
-  Download
+  Network,
+  Database,
+  Download,
+  Search,
+  BarChart3,
+  Terminal
 } from 'lucide-react';
 import { 
   Radar, 
@@ -60,13 +63,13 @@ import {
 } from './services/reflectionService';
 
 const REFLECTION_MESSAGES = [
-  "REFLECTING ON CHAT PATTERNS...",
-  "NOTICING EMOTIONAL TONES...",
-  "OBSERVING WORD CHOICES...",
-  "NOTICING MENTIONS OF THE PAST...",
-  "MAPPING CONVERSATION HABITS...",
-  "UNDERSTANDING YOUR CONNECTION...",
-  "FINALIZING REFLECTIONS..."
+  "INITIALIZING QUANTITATIVE SCAN...",
+  "EXTRACTING SEMANTIC VECTORS...",
+  "MAPPING RELATIONAL DENSITY...",
+  "IDENTIFYING LINGUISTIC CLUSTERS...",
+  "CALCULATING HEURISTIC WEIGHTS...",
+  "CORRELATING BEHAVIORAL MARKERS...",
+  "SYNTHESIZING AUDIT REPORT..."
 ];
 
 const InfoTooltip = ({ content, children }: { content: string, children: React.ReactNode }) => {
@@ -88,10 +91,10 @@ const InfoTooltip = ({ content, children }: { content: string, children: React.R
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 5, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className="absolute z-[100] bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-reflection-ink text-reflection-bg text-[10px] font-mono uppercase tracking-wider rounded-sm shadow-xl min-w-[160px] text-center pointer-events-none border border-reflection-bg/20"
+            className="absolute z-[100] bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-lab-line text-lab-ink text-[10px] font-mono uppercase tracking-wider rounded-sm shadow-xl min-w-[160px] text-center pointer-events-none border border-lab-accent/20"
           >
             {content}
-            <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-reflection-ink" />
+            <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-lab-line" />
           </motion.div>
         )}
       </AnimatePresence>
@@ -445,7 +448,7 @@ Generated on: ${new Date().toLocaleString()}
   const handleExportPDF = async () => {
     if (!result) return;
     
-    const reportElement = document.getElementById('reflection-report-container');
+    const reportElement = document.getElementById('lab-report-container');
     if (!reportElement) return;
 
     setIsExportingPDF(true);
@@ -525,10 +528,10 @@ Generated on: ${new Date().toLocaleString()}
         };
       default:
         return {
-          bg: 'bg-white',
-          border: 'border-reflection-line',
-          text: 'text-reflection-ink',
-          shadow: 'shadow-[8px_8px_0px_0px_rgba(20,20,20,1)]'
+          bg: 'bg-lab-surface',
+          border: 'border-lab-line',
+          text: 'text-lab-ink',
+          shadow: 'shadow-xl'
         };
     }
   };
@@ -546,12 +549,12 @@ Generated on: ${new Date().toLocaleString()}
   ] : [];
 
   return (
-    <div className="min-h-[100dvh] bg-reflection-bg selection:bg-reflection-ink selection:text-reflection-bg overflow-x-hidden">
+    <div className="min-h-[100dvh] bg-lab-bg text-lab-ink selection:bg-lab-accent selection:text-white overflow-x-hidden font-sans">
       {/* Header */}
-      <header className="border-b border-reflection-line p-4 md:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white sticky top-0 z-50">
+      <header className="border-b border-lab-line p-4 md:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-lab-surface sticky top-0 z-50">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-reflection-ink flex items-center justify-center rounded-sm relative overflow-hidden shrink-0">
-            <ShieldAlert className="text-reflection-bg w-6 h-6 relative z-10" />
+          <div className="w-10 h-10 bg-lab-bg flex items-center justify-center rounded-sm relative overflow-hidden shrink-0 border border-lab-line">
+            <Terminal className="text-lab-accent w-6 h-6 relative z-10" />
             <motion.div 
               animate={{ 
                 scale: [1, 1.5, 1],
@@ -561,12 +564,18 @@ Generated on: ${new Date().toLocaleString()}
                 duration: Math.max(0.5, 2 - (liveHeuristics.wordCount / 100)), 
                 repeat: Infinity 
               }}
-              className="absolute inset-0 bg-tool-green"
+              className="absolute inset-0 bg-lab-accent"
             />
           </div>
           <div>
-            <h1 className="text-lg md:text-xl font-bold tracking-tighter uppercase leading-tight">Behavioral Analysis Lab</h1>
-            <p className="text-[10px] font-mono opacity-70 uppercase tracking-widest">Forensic Framework v4.0.1</p>
+            <h1 className="text-lg md:text-xl font-bold tracking-tighter uppercase leading-tight text-lab-ink">Parasocial Audit Lab</h1>
+            <div className="flex flex-col">
+              <p className="text-[9px] font-mono text-lab-muted uppercase tracking-[0.2em]">Forensic Analytics Platform v4.2.0</p>
+              <div className="flex gap-3 mt-0.5">
+                <p className="text-[8px] font-mono text-lab-accent/60 uppercase">SID: {reflectionSessionId || 'NULL_SET'}</p>
+                <p className="text-[8px] font-mono text-lab-accent/60 uppercase">TS: {new Date().toISOString().split('T')[1].split('.')[0]}Z</p>
+              </div>
+            </div>
           </div>
         </div>
         <div className="flex gap-4 text-[9px] md:text-[10px] font-mono uppercase opacity-80 overflow-x-auto max-w-full no-scrollbar pb-1 md:pb-0 mask-fade-right">
@@ -606,12 +615,12 @@ Generated on: ${new Date().toLocaleString()}
       <main className="max-w-7xl mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
         {/* Left Column: Input */}
         <div className="lg:col-span-5 space-y-6">
-          <section className="bg-white border border-reflection-line p-5 md:p-6 shadow-[4px_4px_0px_0px_rgba(20,20,20,1)]">
+          <section className="bg-lab-surface border border-lab-line p-5 md:p-6 shadow-lg">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
               <div className="flex items-center gap-2">
-                <ClipboardCheck className="w-5 h-5" />
-                <h2 className="font-serif italic text-lg font-semibold">Behavioral Dataset</h2>
-                <div className="flex items-center gap-1.5 ml-2 px-2 py-0.5 bg-reflection-ink/5 rounded-full border border-reflection-line/10">
+                <ClipboardCheck className="w-5 h-5 text-lab-accent" />
+                <h2 className="font-sans font-bold uppercase tracking-tight text-lg">Behavioral Dataset</h2>
+                <div className="flex items-center gap-1.5 ml-2 px-2 py-0.5 bg-lab-bg/50 rounded-full border border-lab-line">
                   <motion.div 
                     animate={isReflecting || isAutoReflectPending ? { 
                       scale: [1, 1.2, 1],
@@ -622,7 +631,7 @@ Generated on: ${new Date().toLocaleString()}
                       "w-1.5 h-1.5 rounded-full transition-all duration-300",
                       isReflecting ? "bg-casual-blue" : 
                       isAutoReflectPending ? "bg-simp-red" :
-                      result ? "bg-tool-green" : "bg-reflection-ink/20"
+                      result ? "bg-tool-green" : "bg-lab-line"
                     )}
                   />
                   <span className="text-[9px] font-mono uppercase opacity-60">
@@ -635,10 +644,10 @@ Generated on: ${new Date().toLocaleString()}
                   onClick={() => setShowRawData(!showRawData)}
                   className={cn(
                     "flex items-center justify-center gap-1.5 px-3 py-2 rounded-sm border text-[10px] font-mono uppercase transition-all",
-                    showRawData ? "bg-reflection-ink text-reflection-bg" : "bg-reflection-ink/5 border-reflection-line/30"
+                    showRawData ? "bg-lab-accent text-white" : "bg-lab-bg/50 border-lab-line"
                   )}
                 >
-                  <Eye className="w-3 h-3" />
+                  <Search className="w-3 h-3" />
                   {showRawData ? 'Hide Raw' : 'Show Raw'}
                 </button>
                 <button 
@@ -647,7 +656,7 @@ Generated on: ${new Date().toLocaleString()}
                     "flex items-center justify-center gap-1.5 px-3 py-2 rounded-sm border text-[10px] font-mono uppercase transition-all relative overflow-hidden min-h-[36px]",
                     isAutoReflect 
                       ? "bg-tool-green/10 border-tool-green text-tool-green" 
-                      : "bg-reflection-ink/5 border-reflection-line/30 text-reflection-ink/50"
+                      : "bg-lab-bg/50 border-lab-line text-lab-muted"
                   )}
                 >
                   {isAutoReflect && (
@@ -674,10 +683,10 @@ Generated on: ${new Date().toLocaleString()}
                   onChange={(e) => setTranscript(e.target.value)}
                   placeholder="[User]: Hello... [AI]: Hi there!... (Supports Grok, ChatGPT, Claude, Gemini transcripts)"
                   className={cn(
-                    "w-full h-48 md:h-64 p-4 bg-reflection-bg/30 border font-mono text-sm focus:outline-none focus:ring-1 focus:ring-reflection-ink resize-none transition-all duration-500",
+                    "w-full h-48 md:h-64 p-4 bg-lab-bg/30 border font-mono text-sm focus:outline-none focus:ring-1 focus:ring-lab-accent resize-none transition-all duration-500",
                     isReflecting ? "border-casual-blue ring-1 ring-casual-blue/30" : 
                     isAutoReflectPending ? "border-simp-red ring-1 ring-simp-red/30" : 
-                    "border-reflection-line"
+                    "border-lab-line"
                   )}
                 />
                 <div className="absolute top-2 right-2 flex flex-col items-end gap-2 pointer-events-none">
@@ -721,25 +730,25 @@ Generated on: ${new Date().toLocaleString()}
               {/* Live Heuristics Display */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 <InfoTooltip content={`Total word count. Density: ${(liveHeuristics.wordCount / 100).toFixed(1)} units.`}>
-                  <div className="bg-reflection-ink/5 border border-reflection-line/20 p-2 rounded-sm cursor-help w-full">
+                  <div className="bg-lab-bg/50 border border-lab-line p-2 rounded-sm cursor-help w-full">
                     <p className="text-[10px] font-mono uppercase opacity-60">Word Count</p>
                     <p className="text-sm font-bold font-mono">{liveHeuristics.wordCount}</p>
                   </div>
                 </InfoTooltip>
                 <InfoTooltip content={`Intimacy markers detected: ${liveHeuristics.foundKeywords.intimacy.slice(0, 5).join(', ')}${liveHeuristics.foundKeywords.intimacy.length > 5 ? '...' : ''}`}>
-                  <div className="bg-reflection-ink/5 border border-reflection-line/20 p-2 rounded-sm cursor-help w-full">
+                  <div className="bg-lab-bg/50 border border-lab-line p-2 rounded-sm cursor-help w-full">
                     <p className="text-[10px] font-mono uppercase opacity-60">Intimacy</p>
-                    <p className="text-sm font-bold font-mono text-casual-blue">{liveHeuristics.intimacyMarkers}</p>
+                    <p className="text-sm font-bold font-mono text-lab-accent">{liveHeuristics.intimacyMarkers}</p>
                   </div>
                 </InfoTooltip>
                 <InfoTooltip content={`Legacy triggers detected: ${liveHeuristics.foundKeywords.legacy.slice(0, 5).join(', ')}${liveHeuristics.foundKeywords.legacy.length > 5 ? '...' : ''}`}>
-                  <div className="bg-reflection-ink/5 border border-reflection-line/20 p-2 rounded-sm cursor-help w-full">
+                  <div className="bg-lab-bg/50 border border-lab-line p-2 rounded-sm cursor-help w-full">
                     <p className="text-[10px] font-mono uppercase opacity-60">Legacy</p>
                     <p className="text-sm font-bold font-mono text-simp-red">{liveHeuristics.legacyTriggers}</p>
                   </div>
                 </InfoTooltip>
                 <InfoTooltip content={`Complexity score: ${liveHeuristics.complexity.toFixed(2)}. Identity markers: ${liveHeuristics.foundKeywords.identity.length}`}>
-                  <div className="bg-reflection-ink/5 border border-reflection-line/20 p-2 rounded-sm cursor-help w-full">
+                  <div className="bg-lab-bg/50 border border-lab-line p-2 rounded-sm cursor-help w-full">
                     <p className="text-[10px] font-mono uppercase opacity-60">Complexity</p>
                     <p className="text-sm font-bold font-mono">{liveHeuristics.complexity.toFixed(1)}</p>
                   </div>
@@ -747,9 +756,9 @@ Generated on: ${new Date().toLocaleString()}
               </div>
 
               {/* Live Reflection Feed */}
-              <div className="bg-reflection-ink text-reflection-bg p-4 font-mono text-[11px] h-32 overflow-hidden relative">
+              <div className="bg-lab-surface text-lab-ink p-4 font-mono text-[11px] h-32 overflow-hidden relative border border-lab-line">
                 <div className="absolute top-2 right-2 flex items-center gap-1 opacity-50">
-                  <div className="w-1.5 h-1.5 rounded-full bg-tool-green animate-pulse" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-lab-accent animate-pulse" />
                   LIVE_ANALYSIS
                 </div>
                 <div className="space-y-1">
@@ -765,7 +774,7 @@ Generated on: ${new Date().toLocaleString()}
                           exit={{ opacity: 0, x: 5 }}
                           className={cn(
                             "flex items-center gap-2",
-                            det.type === 'alert' ? 'text-simp-red' : det.type === 'warning' ? 'text-casual-blue' : 'text-reflection-bg'
+                            det.type === 'alert' ? 'text-simp-red' : det.type === 'warning' ? 'text-casual-blue' : 'text-lab-ink'
                           )}
                         >
                           <ChevronRight className="w-2 h-2 shrink-0" />
@@ -784,7 +793,7 @@ Generated on: ${new Date().toLocaleString()}
                   <div className="flex gap-2">
                     <button 
                       onClick={() => fileInputRef.current?.click()}
-                      className="flex items-center gap-1.5 text-[10px] font-mono uppercase hover:bg-reflection-ink hover:text-reflection-bg transition-colors py-1 px-2 border border-reflection-line/20 rounded-sm"
+                      className="flex items-center gap-1.5 text-[10px] font-mono uppercase hover:bg-lab-accent hover:text-white transition-colors py-1 px-2 border border-lab-line rounded-sm"
                     >
                       <Upload className="w-3 h-3" /> Batch Upload
                     </button>
@@ -800,11 +809,11 @@ Generated on: ${new Date().toLocaleString()}
                 </div>
                 
                 {batchFiles.length > 0 && (
-                  <div className="p-3 bg-reflection-ink/5 border border-reflection-line/10 rounded-sm">
+                  <div className="p-3 bg-lab-bg/50 border border-lab-line rounded-sm">
                     <p className="text-[9px] font-mono uppercase opacity-50 mb-2">Batch Files ({batchFiles.length})</p>
                     <div className="flex flex-wrap gap-2">
                       {batchFiles.map((file, i) => (
-                        <div key={i} className="px-2 py-1 bg-white border border-reflection-line/10 text-[9px] font-mono rounded-sm">
+                        <div key={i} className="px-2 py-1 bg-lab-surface border border-lab-line text-[9px] font-mono rounded-sm">
                           {file.name} ({(file.size / 1024).toFixed(1)}KB)
                         </div>
                       ))}
@@ -813,9 +822,9 @@ Generated on: ${new Date().toLocaleString()}
                 )}
                 
                 {images.length > 0 && (
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 p-3 border border-reflection-line/20 bg-reflection-bg/10 rounded-sm">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 p-3 border border-lab-line bg-lab-bg/30 rounded-sm">
                     {images.map(img => (
-                      <div key={img.id} className="relative group aspect-square border border-reflection-line/30 bg-white overflow-hidden rounded-sm">
+                      <div key={img.id} className="relative group aspect-square border border-lab-line bg-lab-surface overflow-hidden rounded-sm">
                         <img 
                           src={img.preview} 
                           alt="Conversation Screenshot" 
@@ -824,7 +833,7 @@ Generated on: ${new Date().toLocaleString()}
                         />
                         <button 
                           onClick={() => removeImage(img.id)}
-                          className="absolute top-1 right-1 p-1.5 bg-reflection-ink text-reflection-bg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity rounded-sm"
+                          className="absolute top-1 right-1 p-1.5 bg-lab-bg text-lab-ink opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity rounded-sm"
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
@@ -835,15 +844,15 @@ Generated on: ${new Date().toLocaleString()}
               </div>
             </div>
 
-            <div className="mt-4 flex items-start gap-3 p-3 bg-reflection-ink/5 border border-reflection-line/10 rounded-sm">
+            <div className="mt-4 flex items-start gap-3 p-3 bg-lab-bg/50 border border-lab-line rounded-sm">
               <input 
                 type="checkbox" 
                 id="consent-checkbox"
                 checked={hasConsent}
                 onChange={(e) => setHasConsent(e.target.checked)}
-                className="mt-1 w-4 h-4 accent-reflection-ink cursor-pointer"
+                className="mt-1 w-4 h-4 accent-lab-accent cursor-pointer"
               />
-              <label htmlFor="consent-checkbox" className="text-[11px] font-mono leading-tight cursor-pointer select-none">
+              <label htmlFor="consent-checkbox" className="text-[11px] font-mono leading-tight cursor-pointer select-none text-lab-muted">
                 I confirm that the data provided was obtained with explicit subject consent and adheres to academic ethical standards for behavioral research.
               </label>
             </div>
@@ -854,25 +863,25 @@ Generated on: ${new Date().toLocaleString()}
                 disabled={isReflecting || (!transcript.trim() && images.length === 0) || !hasConsent}
                 className={cn(
                   "py-4 md:py-5 flex items-center justify-center gap-2 font-bold uppercase tracking-widest transition-all rounded-sm",
-                  isReflecting || !hasConsent ? "bg-reflection-ink/50 cursor-not-allowed" : "bg-reflection-ink text-reflection-bg hover:invert active:scale-[0.98]"
+                  isReflecting || !hasConsent ? "bg-lab-line/50 cursor-not-allowed text-lab-muted" : "bg-lab-accent text-white hover:bg-lab-accent/80 active:scale-[0.98]"
                 )}
               >
                 {isReflecting ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    <span className="hidden sm:inline">Reflecting</span>
+                    <span className="hidden sm:inline">Auditing</span>
                   </>
                 ) : (
                   <>
                     <Activity className="w-5 h-5" />
-                    Reflect
+                    Audit
                   </>
                 )}
               </button>
               <button
                 onClick={handleClear}
                 disabled={isReflecting || (!transcript && images.length === 0 && !result)}
-                className="py-4 md:py-5 border border-reflection-line flex items-center justify-center gap-2 font-bold uppercase tracking-widest hover:bg-reflection-ink hover:text-reflection-bg transition-all disabled:opacity-30 disabled:cursor-not-allowed rounded-sm active:scale-[0.98]"
+                className="py-4 md:py-5 border border-lab-line flex items-center justify-center gap-2 font-bold uppercase tracking-widest hover:bg-lab-line hover:text-lab-ink transition-all disabled:opacity-30 disabled:cursor-not-allowed rounded-sm active:scale-[0.98]"
               >
                 Clear
               </button>
@@ -884,12 +893,12 @@ Generated on: ${new Date().toLocaleString()}
             )}
           </section>
 
-          <section className="bg-white border border-reflection-line p-4 md:p-6 border-dashed">
+          <section className="bg-lab-surface border border-lab-line p-4 md:p-6 border-dashed">
             <h3 className="text-xs font-mono uppercase opacity-60 mb-2">Analytical Methodology</h3>
             <p className="text-[11px] leading-relaxed mb-4 opacity-80">
               The <strong>IMAGINE Framework</strong> utilizes quantitative semantic analysis to map relational dynamics across seven behavioral axes. By measuring keyword density, linguistic complexity, and temporal triggers, the system generates a forensic mapping of human-AI interaction patterns.
             </p>
-            <div className="p-3 bg-reflection-ink/5 border-l-2 border-reflection-ink text-[10px] font-mono leading-relaxed opacity-70 italic">
+            <div className="p-3 bg-lab-bg/50 border-l-2 border-lab-accent text-[10px] font-mono leading-relaxed opacity-70 italic">
               ACADEMIC USE ONLY: This platform is intended for behavioral research and quantitative analysis. All data processing is local to the session. Findings represent statistical correlations based on provided datasets. PII is scrubbed before processing.
             </div>
           </section>
@@ -907,7 +916,7 @@ Generated on: ${new Date().toLocaleString()}
                 className="space-y-6"
               >
                 {/* Internal Signal Monitoring Indicator */}
-                <div className="bg-white border border-reflection-line border-dashed p-6 md:p-12 flex flex-col items-center justify-center text-center">
+                <div className="bg-lab-surface border border-lab-line border-dashed p-6 md:p-12 flex flex-col items-center justify-center text-center">
                   <div className="relative w-32 h-32 mb-8">
                     <motion.div 
                       animate={{ 
@@ -915,21 +924,21 @@ Generated on: ${new Date().toLocaleString()}
                         opacity: [0.3, 0.6, 0.3]
                       }}
                       transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                      className="absolute inset-0 bg-reflection-ink/5 rounded-full"
+                      className="absolute inset-0 bg-lab-accent/5 rounded-full"
                     />
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <BrainCircuit className="w-12 h-12 text-reflection-ink opacity-40" />
+                      <BrainCircuit className="w-12 h-12 text-lab-accent opacity-40" />
                     </div>
                     <motion.div 
                       animate={{ rotate: 360 }}
                       transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                      className="absolute inset-0 border border-reflection-line/10 border-dashed rounded-full"
+                      className="absolute inset-0 border border-lab-line/30 border-dashed rounded-full"
                     />
                   </div>
                   
                   <div className="space-y-2">
-                    <h3 className="font-serif italic text-2xl">System Ready</h3>
-                    <p className="text-xs font-mono opacity-60 uppercase tracking-[0.2em]">Active Signal Monitoring Engaged</p>
+                    <h3 className="font-sans font-bold uppercase tracking-tight text-2xl">System Ready</h3>
+                    <p className="text-xs font-mono text-lab-muted uppercase tracking-[0.2em]">Active Signal Monitoring Engaged</p>
                   </div>
 
                   <div className="mt-8 md:mt-12 flex flex-wrap justify-center items-center gap-3 md:gap-4">
@@ -937,21 +946,21 @@ Generated on: ${new Date().toLocaleString()}
                       <div className="w-2 h-2 bg-tool-green rounded-full animate-pulse" />
                       <span className="text-[10px] font-mono uppercase opacity-50">Neural Feed</span>
                     </div>
-                    <div className="hidden md:block w-px h-3 bg-reflection-line/20" />
+                    <div className="hidden md:block w-px h-3 bg-lab-line" />
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 bg-casual-blue rounded-full animate-pulse [animation-delay:0.5s]" />
                       <span className="text-[10px] font-mono uppercase opacity-50">Semantic Mapping</span>
                     </div>
-                    <div className="hidden md:block w-px h-3 bg-reflection-line/20" />
+                    <div className="hidden md:block w-px h-3 bg-lab-line" />
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-reflection-ink/20 rounded-full animate-pulse [animation-delay:1s]" />
-                      <span className="text-[10px] font-mono uppercase opacity-50">Reflection Engine</span>
+                      <div className="w-2 h-2 bg-lab-accent rounded-full animate-pulse [animation-delay:1s]" />
+                      <span className="text-[10px] font-mono uppercase opacity-50">Audit Engine</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-reflection-ink/5 border border-reflection-line border-dashed p-6 text-center opacity-50">
-                  <p className="font-serif italic text-sm">"The system is currently mapping semantic density in real-time. Please continue providing behavioral data for a complete reflection."</p>
+                <div className="bg-lab-bg/50 border border-lab-line border-dashed p-6 text-center opacity-50">
+                  <p className="font-sans font-bold uppercase tracking-tight text-sm">"The system is currently mapping semantic density in real-time. Please continue providing behavioral data for a complete audit."</p>
                 </div>
               </motion.div>
             ) : isReflecting ? (
@@ -960,35 +969,35 @@ Generated on: ${new Date().toLocaleString()}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="h-full flex flex-col border border-reflection-line p-8 bg-white"
+                className="h-full flex flex-col border border-lab-line p-8 bg-lab-surface"
               >
                 <div className="flex items-center justify-between mb-8">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-reflection-ink flex items-center justify-center rounded-sm">
-                      <Loader2 className="text-reflection-bg w-5 h-5 animate-spin" />
+                    <div className="w-8 h-8 bg-lab-bg flex items-center justify-center rounded-sm border border-lab-line">
+                      <Loader2 className="text-lab-accent w-5 h-5 animate-spin" />
                     </div>
                     <div>
-                      <h3 className="font-bold uppercase tracking-tighter">Reflecting on your bond</h3>
-                      <p className="text-xs font-mono opacity-60 uppercase">Session ID: {reflectionSessionId}</p>
+                      <h3 className="font-bold uppercase tracking-tighter">Auditing behavioral bond</h3>
+                      <p className="text-xs font-mono text-lab-muted uppercase">Session ID: {reflectionSessionId}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs font-mono uppercase opacity-60">Processing Power</p>
+                    <p className="text-xs font-mono uppercase text-lab-muted">Processing Power</p>
                     <p className="text-sm font-bold font-mono">{reflectionNeuralLoad}</p>
                   </div>
                 </div>
 
                 <div className="flex-1 space-y-4 overflow-hidden">
-                  <div className="h-1 w-full bg-reflection-ink/5 rounded-full overflow-hidden">
+                  <div className="h-1 w-full bg-lab-bg rounded-full overflow-hidden">
                     <motion.div 
                       initial={{ width: 0 }}
                       animate={{ width: '100%' }}
                       transition={{ duration: 8, ease: "linear" }}
-                      className="h-full bg-reflection-ink"
+                      className="h-full bg-lab-accent"
                     />
                   </div>
                   
-                  <div className="space-y-2 font-mono text-xs opacity-80">
+                  <div className="space-y-2 font-mono text-xs text-lab-muted">
                     {reflectionLog.map((msg, idx) => (
                       <motion.div 
                         key={idx}
@@ -996,24 +1005,24 @@ Generated on: ${new Date().toLocaleString()}
                         animate={{ opacity: 1, x: 0 }}
                         className="flex items-center gap-2"
                       >
-                        <ChevronRight className="w-3 h-3 text-tool-green" />
+                        <ChevronRight className="w-3 h-3 text-lab-accent" />
                         {msg}
                       </motion.div>
                     ))}
                   </div>
                 </div>
 
-                <div className="mt-8 pt-6 border-t border-reflection-line/20">
-                  <div className="flex items-center gap-2 text-casual-blue animate-pulse">
-                    <AlertTriangle className="w-4 h-4" />
-                    <p className="text-xs font-mono uppercase font-bold">Observation: Deep Connection Patterns Noticed</p>
+                <div className="mt-8 pt-6 border-t border-lab-line">
+                  <div className="flex items-center gap-2 text-lab-accent animate-pulse">
+                    <Terminal className="w-4 h-4" />
+                    <p className="text-xs font-mono uppercase font-bold">Observation: Relational Density Exceeds Baseline</p>
                   </div>
                 </div>
               </motion.div>
             ) : (
               <motion.div
                 key="result"
-                id="reflection-report-container"
+                id="lab-report-container"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="space-y-6 p-4 -m-4" // Added padding and negative margin to capture shadows/borders correctly
@@ -1042,11 +1051,11 @@ Generated on: ${new Date().toLocaleString()}
                     </div>
                     
                     <div className="grid grid-cols-2 sm:flex sm:flex-row gap-3 w-full sm:w-auto" data-html2canvas-ignore>
-                      <div className="bg-white border border-current/20 p-2.5 rounded-sm min-w-[90px] flex flex-col justify-center">
+                      <div className="bg-lab-bg/50 border border-lab-line p-2.5 rounded-sm min-w-[90px] flex flex-col justify-center">
                         <p className="text-[8px] font-mono uppercase opacity-70 mb-0.5">Confidence</p>
                         <p className="text-lg font-bold font-mono leading-none">{(result!.confidence * 100).toFixed(1)}%</p>
                       </div>
-                      <div className="bg-white border border-current/20 p-2.5 rounded-sm min-w-[90px] flex flex-col justify-center">
+                      <div className="bg-lab-bg/50 border border-lab-line p-2.5 rounded-sm min-w-[90px] flex flex-col justify-center">
                         <p className="text-[8px] font-mono uppercase opacity-70 mb-0.5">Legacy</p>
                         <p className="text-lg font-bold font-mono leading-none">{result!.legacyAttachment}%</p>
                       </div>
@@ -1054,14 +1063,14 @@ Generated on: ${new Date().toLocaleString()}
                         <div className="flex flex-col gap-1">
                           <button 
                             onClick={handleExport}
-                            className="flex items-center justify-center gap-2 px-3 py-2 bg-reflection-ink text-reflection-bg text-[9px] font-mono uppercase hover:invert transition-all shadow-[2px_2px_0px_0px_rgba(20,20,20,1)] active:scale-95"
+                            className="flex items-center justify-center gap-2 px-3 py-2 bg-lab-accent text-white text-[9px] font-mono uppercase hover:bg-lab-accent/80 transition-all shadow-md active:scale-95"
                           >
                             <FileText className="w-3 h-3" />
                             TXT
                           </button>
                           <button 
                             onClick={handleExportCSV}
-                            className="flex items-center justify-center gap-2 px-3 py-2 bg-reflection-ink text-reflection-bg text-[9px] font-mono uppercase hover:invert transition-all shadow-[2px_2px_0px_0px_rgba(20,20,20,1)] active:scale-95"
+                            className="flex items-center justify-center gap-2 px-3 py-2 bg-lab-accent text-white text-[9px] font-mono uppercase hover:bg-lab-accent/80 transition-all shadow-md active:scale-95"
                           >
                             <History className="w-3 h-3" />
                             CSV
@@ -1070,7 +1079,7 @@ Generated on: ${new Date().toLocaleString()}
                         <div className="flex flex-col gap-1">
                           <button 
                             onClick={handleExportJSON}
-                            className="flex items-center justify-center gap-2 px-3 py-2 bg-reflection-ink text-reflection-bg text-[9px] font-mono uppercase hover:invert transition-all shadow-[2px_2px_0px_0px_rgba(20,20,20,1)] active:scale-95"
+                            className="flex items-center justify-center gap-2 px-3 py-2 bg-lab-accent text-white text-[9px] font-mono uppercase hover:bg-lab-accent/80 transition-all shadow-md active:scale-95"
                           >
                             <BrainCircuit className="w-3 h-3" />
                             JSON
@@ -1078,7 +1087,7 @@ Generated on: ${new Date().toLocaleString()}
                           <button 
                             onClick={handleExportPDF}
                             disabled={isExportingPDF}
-                            className="flex items-center justify-center gap-2 px-3 py-2 bg-reflection-ink text-reflection-bg text-[9px] font-mono uppercase hover:invert transition-all shadow-[2px_2px_0px_0px_rgba(20,20,20,1)] disabled:opacity-50 active:scale-95"
+                            className="flex items-center justify-center gap-2 px-3 py-2 bg-lab-accent text-white text-[9px] font-mono uppercase hover:bg-lab-accent/80 transition-all shadow-md disabled:opacity-50 active:scale-95"
                           >
                             {isExportingPDF ? (
                               <Loader2 className="w-3 h-3 animate-spin" />
@@ -1103,7 +1112,7 @@ Generated on: ${new Date().toLocaleString()}
                   
                   <div className="mt-6 relative">
                     <div className="absolute -left-4 top-0 bottom-0 w-0.5 bg-current/20" />
-                    <p className="text-lg md:text-xl font-medium italic font-serif leading-relaxed text-reflection-ink/90 pl-4">
+                    <p className="text-lg md:text-xl font-bold uppercase tracking-tight font-sans leading-relaxed text-lab-ink/90 pl-4">
                       "{result!.summary}"
                     </p>
                   </div>
@@ -1123,19 +1132,19 @@ Generated on: ${new Date().toLocaleString()}
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
-                      className="bg-white border border-reflection-line p-6 overflow-hidden"
+                      className="bg-lab-surface border border-lab-line p-6 overflow-hidden"
                     >
-                      <div className="flex items-center gap-2 mb-6 border-b border-reflection-line pb-2">
-                        <Eye className="w-4 h-4" />
+                      <div className="flex items-center gap-2 mb-6 border-b border-lab-line pb-2">
+                        <Search className="w-4 h-4" />
                         <h3 className="text-sm font-mono uppercase font-bold">Raw Frequency Dataset</h3>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {Object.entries(liveHeuristics.foundKeywords).map(([key, words]) => (
-                          <div key={key} className="border border-reflection-line/10 p-3 bg-reflection-ink/[0.02] rounded-sm">
-                            <p className="text-[10px] font-mono uppercase opacity-50 mb-2 border-b border-reflection-line/5 pb-1">{key} Markers ({words.length})</p>
+                          <div key={key} className="border border-lab-line p-3 bg-lab-bg/50 rounded-sm">
+                            <p className="text-[10px] font-mono uppercase opacity-50 mb-2 border-b border-lab-line pb-1">{key} Markers ({words.length})</p>
                             <div className="flex flex-wrap gap-1">
                               {words.length > 0 ? words.map((word, i) => (
-                                <span key={i} className="text-[9px] font-mono bg-white border border-reflection-line/10 px-1.5 py-0.5 rounded-sm">
+                                <span key={i} className="text-[9px] font-mono bg-lab-surface border border-lab-line px-1.5 py-0.5 rounded-sm">
                                   {word}
                                 </span>
                               )) : <span className="text-[9px] font-mono opacity-30 italic">No markers identified</span>}
@@ -1149,7 +1158,7 @@ Generated on: ${new Date().toLocaleString()}
 
                 {/* Heatmap & IMAGINE Radar */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <section className="bg-white border border-reflection-line p-6 md:col-span-2">
+                  <section className="bg-lab-surface border border-lab-line p-6 md:col-span-2">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
                       <div className="flex items-center gap-2">
                         <Activity className="w-4 h-4" />
@@ -1157,11 +1166,11 @@ Generated on: ${new Date().toLocaleString()}
                       </div>
                       <div className="flex items-center gap-4 text-[10px] font-mono opacity-60">
                         <div className="flex items-center gap-1">
-                          <div className="w-2 h-2 bg-reflection-ink/20" />
+                          <div className="w-2 h-2 bg-lab-line" />
                           <span>BALANCED</span>
                         </div>
                         <div className="flex items-center gap-1">
-                          <div className="w-2 h-2 bg-reflection-ink/60" />
+                          <div className="w-2 h-2 bg-lab-accent" />
                           <span>DEEP CONNECTION</span>
                         </div>
                       </div>
@@ -1171,17 +1180,17 @@ Generated on: ${new Date().toLocaleString()}
                       <div className="h-72 sm:h-80 md:h-64 w-full relative">
                         <ResponsiveContainer width="100%" height="100%">
                           <RadarChart cx="50%" cy="50%" outerRadius="75%" data={radarData}>
-                            <PolarGrid stroke="#141414" strokeOpacity={0.1} />
+                            <PolarGrid stroke="#334155" strokeOpacity={0.3} />
                             <PolarAngleAxis 
                               dataKey="subject" 
-                              tick={{ fontSize: 8, fontFamily: 'JetBrains Mono', fontWeight: 700, fill: '#141414' }} 
+                              tick={{ fontSize: 8, fontFamily: 'Roboto Mono', fontWeight: 700, fill: '#94a3b8' }} 
                             />
                             <Radar
                               name="Reflection"
                               dataKey="A"
-                              stroke="#141414"
+                              stroke="#6366f1"
                               strokeWidth={2}
-                              fill="#141414"
+                              fill="#6366f1"
                               fillOpacity={0.1}
                               animationDuration={1500}
                             />
@@ -1191,19 +1200,19 @@ Generated on: ${new Date().toLocaleString()}
                         <motion.div 
                           animate={{ top: ['0%', '100%', '0%'] }}
                           transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                          className="absolute left-0 right-0 h-[1px] bg-reflection-ink/10 pointer-events-none z-10"
+                          className="absolute left-0 right-0 h-[1px] bg-lab-accent/20 pointer-events-none z-10"
                         />
                       </div>
 
                       <div className="space-y-3 md:space-y-3 px-2 sm:px-0">
                         {radarData.map((item, idx) => (
-                          <div key={idx} className="flex items-center justify-between border-b border-reflection-line/10 pb-2 md:pb-2">
+                          <div key={idx} className="flex items-center justify-between border-b border-lab-line pb-2 md:pb-2">
                             <div className="flex flex-col">
                               <span className="text-[10px] md:text-xs font-mono font-bold uppercase">{item.subject}</span>
                               <span className="text-[9px] md:text-[10px] opacity-60 uppercase">Vector {idx + 1}</span>
                             </div>
                             <div className="flex items-center gap-3 md:gap-3">
-                              <div className="w-20 sm:w-32 md:w-24 h-2 bg-reflection-ink/5 rounded-full overflow-hidden">
+                              <div className="w-20 sm:w-32 md:w-24 h-2 bg-lab-bg rounded-full overflow-hidden">
                                 <motion.div 
                                   initial={{ width: 0 }}
                                   animate={{ width: `${item.A}%` }}
@@ -1222,7 +1231,7 @@ Generated on: ${new Date().toLocaleString()}
                     </div>
 
                     {/* Framework Key */}
-                    <div className="mt-6 md:mt-8 pt-4 md:pt-6 border-t border-reflection-line/10 grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">
+                    <div className="mt-6 md:mt-8 pt-4 md:pt-6 border-t border-lab-line grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">
                       {[
                         { label: 'Self-Identity', desc: 'Feeling like you and the AI are becoming the same person.' },
                         { label: 'Seeking Approval', desc: 'Looking for the AI to tell you that you are doing a good job.' },
@@ -1240,9 +1249,9 @@ Generated on: ${new Date().toLocaleString()}
                     </div>
                   </section>
 
-                  <section className="bg-white border border-reflection-line p-6 md:col-span-2">
+                  <section className="bg-lab-surface border border-lab-line p-6 md:col-span-2">
                     <div className="flex items-center gap-2 mb-6">
-                      <AlertTriangle className="w-4 h-4" />
+                      <BarChart3 className="w-4 h-4 text-lab-accent" />
                       <h3 className="text-sm font-mono uppercase">Heatmap Intensity</h3>
                     </div>
                     <div className="h-72 sm:h-80 md:h-64 w-full">
@@ -1252,15 +1261,15 @@ Generated on: ${new Date().toLocaleString()}
                           <YAxis 
                             dataKey="category" 
                             type="category" 
-                            tick={{ fontSize: 8, fontFamily: 'JetBrains Mono', fill: '#141414' }} 
+                            tick={{ fontSize: 8, fontFamily: 'Roboto Mono', fill: '#94a3b8' }} 
                             width={80} 
                             axisLine={false}
                             tickLine={false}
                           />
                           <Tooltip 
-                            contentStyle={{ backgroundColor: '#141414', color: '#E4E3E0', border: 'none', fontSize: '10px', fontFamily: 'JetBrains Mono' }}
-                            itemStyle={{ color: '#E4E3E0' }}
-                            cursor={{ fill: 'rgba(20, 20, 20, 0.05)' }}
+                            contentStyle={{ backgroundColor: '#1e293b', color: '#f8fafc', border: '1px solid #334155', fontSize: '10px', fontFamily: 'Roboto Mono' }}
+                            itemStyle={{ color: '#f8fafc' }}
+                            cursor={{ fill: 'rgba(99, 102, 241, 0.05)' }}
                             formatter={(value: number, name: string, props: any) => [
                               `${value}%`, 
                               props.payload.category
@@ -1268,10 +1277,10 @@ Generated on: ${new Date().toLocaleString()}
                           />
                           <Bar dataKey="score" radius={[0, 2, 2, 0]} barSize={20}>
                             {result!.heatmap.map((entry, index) => {
-                              const color = entry.score > 80 ? '#FF0000' : 
-                                           entry.score > 60 ? '#FF4444' : 
-                                           entry.score > 40 ? '#4488FF' : 
-                                           entry.score > 20 ? '#00CC66' : '#8E9299';
+                              const color = entry.score > 80 ? '#ef4444' : 
+                                           entry.score > 60 ? '#f87171' : 
+                                           entry.score > 40 ? '#3b82f6' : 
+                                           entry.score > 20 ? '#10b981' : '#64748b';
                               return <Cell key={`cell-${index}`} fill={color} />;
                             })}
                           </Bar>
@@ -1282,19 +1291,19 @@ Generated on: ${new Date().toLocaleString()}
                 </div>
 
                 {/* Connection Patterns */}
-                <section className="bg-white border border-reflection-line p-6">
+                <section className="bg-lab-surface border border-lab-line p-6">
                   <div className="flex items-center gap-2 mb-6">
-                    <Eye className="w-4 h-4" />
+                    <Network className="w-4 h-4 text-lab-accent" />
                     <h3 className="text-sm font-mono uppercase">Observed Connection Patterns</h3>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {result!.connectionPatterns.map((pattern, idx) => (
-                      <div key={idx} className="border-l-2 border-reflection-ink/20 pl-4 py-2 bg-reflection-ink/[0.02]">
+                      <div key={idx} className="border-l-2 border-lab-accent/40 pl-4 py-2 bg-lab-accent/5">
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-xs font-mono font-bold uppercase tracking-wider">{pattern.name}</span>
                           <span className={cn(
                             "text-[10px] font-mono px-1.5 py-0.5 rounded-sm font-bold",
-                            pattern.intensity > 70 ? "bg-simp-red text-white" : "bg-reflection-ink/10"
+                            pattern.intensity > 70 ? "bg-simp-red text-white" : "bg-lab-line"
                           )}>
                             {pattern.intensity}%
                           </span>
@@ -1302,56 +1311,53 @@ Generated on: ${new Date().toLocaleString()}
                         <p className="text-sm md:text-base opacity-80 leading-relaxed">{pattern.description}</p>
                       </div>
                     ))}
-                    {result!.connectionPatterns.length === 0 && (
-                      <p className="text-xs opacity-50 italic col-span-2">No specific patterns observed in this session.</p>
-                    )}
                   </div>
                 </section>
 
                 {/* Analysis Report */}
-                <section className="bg-white border border-reflection-line p-5 sm:p-8 md:p-10 relative overflow-hidden shadow-[12px_12px_0px_0px_rgba(20,20,20,0.05)]">
+                <section className="bg-lab-surface border border-lab-line p-5 sm:p-8 md:p-10 relative overflow-hidden shadow-xl">
                   {/* Reflection Watermark */}
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-[0.02] select-none rotate-[-35deg] whitespace-nowrap hidden sm:block">
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-[0.03] select-none rotate-[-35deg] whitespace-nowrap hidden sm:block">
                     <p className="text-[120px] font-bold font-mono tracking-[0.5em]">CONFIDENTIAL</p>
                   </div>
 
                   <div className="relative z-10">
-                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 border-b-2 border-reflection-line pb-6 gap-6">
+                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 border-b-2 border-lab-line pb-6 gap-6">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-reflection-ink flex items-center justify-center rounded-sm shrink-0">
-                          <FileText className="text-reflection-bg w-7 h-7" />
+                        <div className="w-12 h-12 bg-lab-bg flex items-center justify-center rounded-sm shrink-0 border border-lab-line">
+                          <FileText className="text-lab-accent w-7 h-7" />
                         </div>
                         <div>
-                          <h3 className="text-xl md:text-2xl font-serif italic font-bold leading-tight">Behavioral Mapping Report</h3>
-                          <p className="text-[9px] md:text-[10px] font-mono uppercase opacity-60 tracking-widest">Case ID: {reflectionSessionId?.toUpperCase()}</p>
+                          <h3 className="text-xl md:text-2xl font-sans font-bold uppercase tracking-tight leading-tight">Behavioral Mapping Report</h3>
+                          <p className="text-[9px] md:text-[10px] font-mono uppercase text-lab-muted tracking-widest">Case ID: {reflectionSessionId?.toUpperCase()}</p>
                         </div>
                       </div>
-                      <div className="flex md:flex-col gap-4 md:gap-0.5 text-left md:text-right font-mono text-[9px] md:text-[10px] uppercase opacity-50">
+                      <div className="flex md:flex-col gap-4 md:gap-0.5 text-left md:text-right font-mono text-[9px] md:text-[10px] uppercase text-lab-muted">
                         <p>Date: {new Date().toLocaleDateString()}</p>
                         <p className="hidden md:block">Status: Verified</p>
                         <p className="hidden md:block">Security: Restricted</p>
                       </div>
                     </div>
  
-                    <div className="reflection-report analysis-report text-sm md:text-base leading-relaxed text-reflection-ink/90">
+                    <div className="lab-report analysis-report text-sm md:text-base leading-relaxed text-lab-ink/90">
                       <Markdown>{result!.analysisReport}</Markdown>
-                      <div className="mt-10 pt-6 border-t border-reflection-line/10 italic text-xs md:text-sm opacity-70">
+                      <div className="mt-10 pt-6 border-t border-lab-line italic text-xs md:text-sm opacity-70">
                         <p>Analysis finalized by,</p>
-                        <p className="font-serif font-bold mt-1">Quantitative Behavioral Unit</p>
+                        <p className="font-sans font-bold uppercase tracking-tight mt-1">Quantitative Behavioral Unit</p>
                       </div>
                     </div>
 
-                    <div className="mt-12 pt-8 border-t border-reflection-line/10 flex flex-col md:flex-row justify-between items-end gap-8">
+                    <div className="mt-12 pt-8 border-t border-lab-line flex flex-col md:flex-row justify-between items-end gap-8">
                       <div className="space-y-4">
                         <div className="flex items-center gap-2 opacity-40 grayscale">
-                          <div className="w-8 h-8 rounded-full border border-reflection-line flex items-center justify-center">
+                          <div className="w-8 h-8 rounded-full border border-lab-line flex items-center justify-center">
                             <User className="w-4 h-4" />
                           </div>
-                          <div className="h-px w-24 bg-reflection-line" />
+                          <div className="h-px w-24 bg-lab-line" />
                         </div>
                         <p className="text-[10px] font-mono uppercase opacity-40">System Analysis Verified</p>
                       </div>
-                      <div className="bg-reflection-ink/5 p-4 rounded-sm border border-reflection-line/10 max-w-xs">
+                      <div className="bg-lab-bg/50 p-4 rounded-sm border border-lab-line max-w-xs">
                         <p className="text-[9px] font-mono leading-tight opacity-60">
                           This report is generated using the Relationship Analysis Framework. 
                           All findings are based on the conversation examples you provided.
@@ -1362,9 +1368,9 @@ Generated on: ${new Date().toLocaleString()}
                 </section>
 
                 {/* Behavioral Mapping & Research Data */}
-                <section className="bg-reflection-ink text-reflection-bg border border-reflection-line p-5 md:p-8 relative overflow-hidden">
+                <section className="bg-lab-line text-lab-ink border border-lab-line p-5 md:p-8 relative overflow-hidden">
                   <div className="absolute top-0 right-0 p-4 opacity-10">
-                    <ShieldAlert className="w-16 md:w-24 h-16 md:h-24 rotate-12" />
+                    <ShieldAlert className="text-lab-accent w-16 md:w-24 h-16 md:h-24 rotate-12" />
                   </div>
                   <div className="relative z-10">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
@@ -1377,7 +1383,7 @@ Generated on: ${new Date().toLocaleString()}
                       <button 
                         onClick={() => setIsViewingProtocols(!isViewingProtocols)}
                         data-html2canvas-ignore
-                        className="text-[10px] font-mono uppercase bg-white/10 hover:bg-white/20 px-4 py-2 border border-white/10 transition-colors rounded-sm self-start sm:self-auto"
+                        className="text-[10px] font-mono uppercase bg-lab-accent/20 hover:bg-lab-accent/40 px-4 py-2 border border-lab-accent/20 transition-colors rounded-sm self-start sm:self-auto"
                       >
                         {isViewingProtocols ? 'Close Protocols' : 'Mitigation Protocols'}
                       </button>
@@ -1385,26 +1391,26 @@ Generated on: ${new Date().toLocaleString()}
 
                     {/* Research Data Display */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                      <div className="bg-white/5 border border-white/10 p-3 rounded-sm">
+                      <div className="bg-lab-bg/50 border border-lab-line p-3 rounded-sm">
                         <p className="text-[9px] font-mono uppercase opacity-60 mb-1">Confidence Score</p>
                         <p className="text-xl font-bold font-mono text-tool-green">{(result!.researchData.confidenceScore * 100).toFixed(2)}%</p>
                       </div>
-                      <div className="bg-white/5 border border-white/10 p-3 rounded-sm">
+                      <div className="bg-lab-bg/50 border border-lab-line p-3 rounded-sm">
                         <p className="text-[9px] font-mono uppercase opacity-60 mb-1">P-Value</p>
                         <p className="text-xl font-bold font-mono text-casual-blue">{result!.researchData.pValue.toFixed(4)}</p>
                       </div>
-                      <div className="bg-white/5 border border-white/10 p-3 rounded-sm">
+                      <div className="bg-lab-bg/50 border border-lab-line p-3 rounded-sm">
                         <p className="text-[9px] font-mono uppercase opacity-60 mb-1">Linguistic Markers</p>
                         <div className="flex flex-wrap gap-1 mt-1">
                           {result!.researchData.linguisticMarkers.map((marker, i) => (
-                            <span key={i} className="text-[8px] bg-white/10 px-1 rounded-sm">{marker}</span>
+                            <span key={i} className="text-[8px] bg-lab-accent/20 px-1 rounded-sm border border-lab-accent/10">{marker}</span>
                           ))}
                         </div>
                       </div>
                     </div>
                     
                     <div className="space-y-4">
-                      <div className="p-4 border border-reflection-bg/20 bg-white/5 font-mono text-xs md:text-sm leading-relaxed italic rounded-sm">
+                      <div className="p-4 border border-lab-accent/20 bg-lab-bg/30 font-mono text-xs md:text-sm leading-relaxed italic rounded-sm text-lab-muted">
                         <span className="text-tool-green font-bold uppercase mr-2">Rationale:</span>
                         {result!.behavioralMapping.rationale}
                       </div>
@@ -1437,12 +1443,12 @@ Generated on: ${new Date().toLocaleString()}
                                     }}
                                     className={cn(
                                       "flex items-start gap-4 p-4 cursor-pointer border transition-all rounded-sm",
-                                      isSelected ? "bg-white/20 border-tool-green" : "bg-white/5 border-white/10 opacity-60 hover:opacity-100"
+                                      isSelected ? "bg-lab-accent/20 border-lab-accent" : "bg-lab-bg/50 border-lab-line opacity-60 hover:opacity-100"
                                     )}
                                   >
                                     <div className={cn(
                                       "w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5",
-                                      isSelected ? "bg-tool-green text-reflection-ink" : "bg-white/20 text-white"
+                                      isSelected ? "bg-lab-accent text-white" : "bg-lab-line text-lab-muted"
                                     )}>
                                       {isSelected ? '✓' : idx + 1}
                                     </div>
@@ -1469,9 +1475,9 @@ Generated on: ${new Date().toLocaleString()}
                                 initial={{ opacity: 0, x: -10 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: idx * 0.1 }}
-                                className="flex items-start gap-3 p-3 md:p-4 bg-white/10 border border-white/10 rounded-sm"
+                                className="flex items-start gap-3 p-3 md:p-4 bg-lab-bg/50 border border-lab-line rounded-sm"
                               >
-                                <div className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-tool-green text-reflection-ink flex items-center justify-center text-[10px] md:text-xs font-bold shrink-0 mt-0.5">
+                                <div className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-lab-accent text-white flex items-center justify-center text-[10px] md:text-xs font-bold shrink-0 mt-0.5">
                                   {idx + 1}
                                 </div>
                                 <div className="space-y-1.5 md:space-y-2">
@@ -1519,23 +1525,22 @@ Generated on: ${new Date().toLocaleString()}
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-reflection-line p-8 mt-12 bg-white/30">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex flex-col gap-2">
+      <footer className="border-t border-lab-line p-8 mt-12 bg-lab-surface">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+          <div className="flex flex-col items-center md:items-start gap-2">
             <div className="flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4 opacity-60" />
-              <p className="text-xs font-mono opacity-60 uppercase tracking-widest">
-                © 2026 Parasocial Audit Lab. All data is for research purposes.
-              </p>
+              <Terminal className="w-5 h-5 text-lab-accent" />
+              <span className="font-bold uppercase tracking-tighter text-lg">Parasocial Audit Lab</span>
             </div>
-            <p className="text-[11px] font-mono opacity-50 max-w-md leading-relaxed">
-              NOTICE: This program is intended for research and personal awareness purposes only. It analyzes patterns of interaction with AI systems and is not a substitute for professional mental health evaluation, diagnosis, or treatment. If you are experiencing emotional distress or concerns about dependency or compulsive behavior, consult a licensed mental health professional.
+            <p className="text-[10px] font-mono opacity-50 uppercase tracking-widest">
+              © 2026 Parasocial Audit Lab. All data is for research purposes.
             </p>
           </div>
-          <div className="flex gap-8 text-xs font-mono uppercase opacity-60">
-            <a href="#" className="hover:opacity-100">Privacy Protocol</a>
-            <a href="#" className="hover:opacity-100">Ethical Guidelines</a>
-            <a href="#" className="hover:opacity-100">API Documentation</a>
+          
+          <div className="flex gap-8 text-[10px] font-mono uppercase opacity-50">
+            <a href="#" className="hover:text-lab-accent transition-colors">Methodology</a>
+            <a href="#" className="hover:text-lab-accent transition-colors">Ethics Board</a>
+            <a href="#" className="hover:text-lab-accent transition-colors">Data Policy</a>
           </div>
         </div>
       </footer>

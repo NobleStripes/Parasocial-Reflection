@@ -1,32 +1,37 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
-  --font-serif: "Cormorant Garamond", serif;
+  --font-mono: "Roboto Mono", ui-monospace, SFMono-Regular, monospace;
 
-  --color-reflection-bg: #E4E3E0;
-  --color-reflection-ink: #141414;
-  --color-reflection-line: #141414;
-  --color-simp-red: #FF4444;
-  --color-casual-blue: #4488FF;
-  --color-tool-green: #00CC66;
+  --color-lab-bg: #0f172a;
+  --color-lab-surface: #1e293b;
+  --color-lab-ink: #f8fafc;
+  --color-lab-muted: #94a3b8;
+  --color-lab-line: #334155;
+  --color-lab-accent: #6366f1;
+  --color-lab-accent-glow: rgba(99, 102, 241, 0.2);
+  
+  --color-simp-red: #ef4444;
+  --color-casual-blue: #3b82f6;
+  --color-tool-green: #10b981;
 }
 
 @layer base {
   body {
-    @apply bg-reflection-bg text-reflection-ink font-sans;
+    @apply bg-lab-bg text-lab-ink font-sans antialiased;
   }
 }
 
 .data-grid {
   display: grid;
-  border: 1px solid var(--color-reflection-line);
+  border: 1px solid var(--color-lab-line);
+  background: var(--color-lab-surface);
 }
 
 .data-cell {
-  border: 0.5px solid var(--color-reflection-line);
+  border: 0.5px solid var(--color-lab-line);
   padding: 0.75rem;
 }
 
@@ -35,7 +40,7 @@
 }
 
 .analysis-report h1, .analysis-report h2, .analysis-report h3 {
-  @apply font-serif italic font-semibold mt-6 mb-3 border-b border-reflection-line/10 pb-2 md:mt-8 md:mb-4;
+  @apply font-sans font-bold uppercase tracking-tight mt-6 mb-3 border-b border-lab-line pb-2 md:mt-8 md:mb-4 text-lab-accent;
 }
 
 .analysis-report h1 { @apply text-xl md:text-2xl; }
@@ -43,7 +48,7 @@
 .analysis-report h3 { @apply text-base md:text-lg; }
 
 .analysis-report p {
-  @apply mb-4 leading-relaxed text-reflection-ink/90 md:mb-6;
+  @apply mb-4 leading-relaxed text-lab-ink/80 md:mb-6;
 }
 
 .analysis-report ul, .analysis-report ol {
@@ -63,15 +68,15 @@
 }
 
 .analysis-report strong {
-  @apply font-bold text-reflection-ink;
+  @apply font-bold text-lab-ink;
 }
 
 .analysis-report blockquote {
-  @apply border-l-4 border-reflection-ink/20 pl-4 italic my-4 py-2 bg-reflection-ink/[0.03] font-serif md:my-6;
+  @apply border-l-4 border-lab-accent/40 pl-4 my-4 py-2 bg-lab-accent/5 font-sans md:my-6;
 }
 
 .analysis-report code {
-  @apply bg-reflection-ink text-reflection-bg px-1.5 py-0.5 rounded-sm font-mono text-[0.85em] md:text-[0.9em];
+  @apply bg-lab-line text-lab-ink px-1.5 py-0.5 rounded-sm font-mono text-[0.85em] md:text-[0.9em];
 }
 
 .mask-fade-right {
@@ -88,7 +93,7 @@
 }
 
 .analysis-report pre {
-  @apply bg-reflection-ink text-reflection-bg p-3 rounded-sm font-mono text-[10px] md:text-xs my-4 overflow-x-auto border-l-4 border-tool-green md:p-4 md:my-6;
+  @apply bg-lab-surface text-lab-ink p-3 rounded-sm font-mono text-[10px] md:text-xs my-4 overflow-x-auto border-l-4 border-lab-accent md:p-4 md:my-6;
 }
 
 .analysis-report pre code {
