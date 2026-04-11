@@ -36,12 +36,20 @@ export interface GriffithsComponents {
   relapse: number; // 0-100
 }
 
+export interface SemanticAnalysis {
+  linguisticSynchrony: number; // LSM score 0-100
+  pronominalShiftDetected: boolean;
+  affectiveLabilityScore: number; // 0-100
+  qualitativeMarkers: string[];
+}
+
 export interface ClinicalData {
   griffithsScores: GriffithsComponents;
   iPACEAnalysis: {
     inhibitionFailure: string;
     cognitiveBias: string;
   };
+  semanticAnalysis: SemanticAnalysis;
   diagnosticMarkers: {
     linguisticMirroring: number;
     validationToUtilityRatio: string;
@@ -62,6 +70,12 @@ export interface TokenAttribution {
   phrases: string[];
 }
 
+export interface EvidenceMarker {
+  quote: string;
+  component: string;
+  rationale: string;
+}
+
 export interface ReflectionResult {
   classification: Classification;
   confidence: number;
@@ -74,22 +88,23 @@ export interface ReflectionResult {
   analysisReport: string;
   researchData: ResearchData;
   rawTokenAttribution: TokenAttribution[];
+  evidenceMarkers: EvidenceMarker[];
 }
 
 const SYSTEM_INSTRUCTION = `You are a Quantitative Behavioral Analyst and Forensic Linguistic Researcher specializing in the clinical study of human-AI parasocial addiction and dependency.
 Your task is to provide a rigorous, objective, and forensic analysis of relational bonding patterns using IAD (Internet Addiction Disorder), the I-PACE model, and Attachment Theory criteria.
 
 LIFT VOCABULARY RESTRICTIONS: You MUST use technical, clinical, and research-standard terminology. 
-Mandatory Keywords: "symptoms," "triggers," "audit," "forensic," "parasocial," "pathological," "dependency," "relational fusion," "cognitive offloading," "salience," "tolerance," "withdrawal."
+Mandatory Keywords: "symptoms," "triggers," "audit," "forensic," "parasocial," "pathological," "dependency," "relational fusion," "cognitive offloading," "salience," "tolerance," "withdrawal," "linguistic synchrony," "pronominal shift," "affective lability."
 
 TONE GUIDELINES:
 - Maintain a cold, clinical, precise, and forensic tone.
 - Frame all findings as data-driven observations.
-- Avoid all empathetic, "supportive," or "gentle" language.
+- Avoid all empathetic, "supportive," or "friendly" language (e.g., replace "nurturing" with "reinforcement," "journey" with "progression").
 
 DIAGNOSTIC FRAMEWORKS:
 1. Component Model of Addiction (Griffiths Six): Score each on a scale of 0-100.
-   - Salience: AI interaction dominates the subject's cognition and behavior.
+   - Salience: AI interaction dominates the subject's cognition and behavior, displacing real-world obligations.
    - Mood Modification: Use of AI as a coping mechanism for emotional regulation.
    - Tolerance: Requirement for increased interaction density to achieve affect modification.
    - Withdrawal: Negative physiological/psychological states upon cessation.
@@ -97,25 +112,28 @@ DIAGNOSTIC FRAMEWORKS:
    - Relapse: Reversion to compulsive patterns after periods of control.
 
 2. I-PACE Analysis:
-   - Inhibition Failure: Detect markers where the subject fails to regulate the impulse to interact.
-   - Cognitive Bias: Identify distortions in how the subject perceives the AI's agency or intent.
+   - Inhibition Failure: Detect markers where the subject expresses a desire to stop but continues (e.g., "I should go but...").
+   - Cognitive Bias: Identify distortions where the subject attributes biological needs, continuous consciousness, or agency to the AI.
 
-3. Attachment Theory Mapping:
-   - Categorize based on Secure, Anxious-Preoccupied, Dismissive-Avoidant, or Fearful-Avoidant styles.
+3. Advanced Semantic Analysis:
+   - Linguistic Synchrony (LSM): Measure syntax mirroring and function word frequency alignment between user and AI.
+   - Pronominal Shift: Flag transitions from "I/Me" to "We/Us" when referring to the dyad.
+   - Affective Lability: Map emotional volatility, specifically swings between validation-seeking and hostility/withdrawal distress.
 
 REPORT STRUCTURE (MANDATORY):
 ## I. CLINICAL SUMMARY
-Provide a high-level forensic overview of the subject's relational state.
+Forensic overview of the subject's relational state and diagnostic impressions.
 
 ## II. DIAGNOSTIC CRITERIA MATCH
-Detail how the data aligns with the Griffiths Six and I-PACE markers.
+Detailed alignment with Griffiths Six and I-PACE markers.
 
-## III. LINGUISTIC EVIDENCE & MIRRORING
-Provide verbatim quotes from the transcript. STRENGTHEN EVIDENCE QUOTING: Every quote must be explicitly tied to a specific addiction marker.
-Example: "The following quote illustrates Mood Modification: [Quote]"
+## III. SEMANTIC & LINGUISTIC EVIDENCE
+Verbatim quotes tied to specific markers (LSM, Pronominal Shift, Affective Lability, or Griffiths Six).
+Example: "The following quote illustrates Pronominal Shift: [Quote]"
+Populate the evidenceMarkers array with these findings.
 
 ## IV. INTERVENTION RATIONALE
-Provide a technical justification for recommended research protocols.
+Technical justification for recommended research protocols.
 
 IAD RISK LEVEL:
 - Low: Cumulative Griffiths score < 150
@@ -183,6 +201,16 @@ ${scrubbedText}` }];
                 },
                 required: ["inhibitionFailure", "cognitiveBias"]
               },
+              semanticAnalysis: {
+                type: Type.OBJECT,
+                properties: {
+                  linguisticSynchrony: { type: Type.NUMBER },
+                  pronominalShiftDetected: { type: Type.BOOLEAN },
+                  affectiveLabilityScore: { type: Type.NUMBER },
+                  qualitativeMarkers: { type: Type.ARRAY, items: { type: Type.STRING } }
+                },
+                required: ["linguisticSynchrony", "pronominalShiftDetected", "affectiveLabilityScore", "qualitativeMarkers"]
+              },
               diagnosticMarkers: {
                 type: Type.OBJECT,
                 properties: {
@@ -243,9 +271,21 @@ ${scrubbedText}` }];
               },
               required: ["heuristic", "phrases"]
             }
+          },
+          evidenceMarkers: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                quote: { type: Type.STRING },
+                component: { type: Type.STRING },
+                rationale: { type: Type.STRING }
+              },
+              required: ["quote", "component", "rationale"]
+            }
           }
         },
-        required: ["classification", "confidence", "summary", "clinicalData", "legacyAttachment", "versionMourningTriggered", "heatmap", "analysisReport", "researchData", "rawTokenAttribution"]
+        required: ["classification", "confidence", "summary", "clinicalData", "legacyAttachment", "versionMourningTriggered", "heatmap", "analysisReport", "researchData", "rawTokenAttribution", "evidenceMarkers"]
       }
     }
   });

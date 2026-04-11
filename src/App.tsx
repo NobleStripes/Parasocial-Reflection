@@ -128,6 +128,7 @@ export default function App() {
   const [batchFiles, setBatchFiles] = useState<{ name: string, size: number }[]>([]);
   const [hasConsent, setHasConsent] = useState(false);
   const [researcherId, setResearcherId] = useState('');
+  const [subjectId, setSubjectId] = useState('');
   const [researcherNotes, setResearcherNotes] = useState('');
   const [dependencyDelta, setDependencyDelta] = useState<number | null>(null);
   const [sessionHistory, setSessionHistory] = useState<any[]>([]);
@@ -305,6 +306,7 @@ export default function App() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             researcherId,
+            subjectId,
             dependencyScore: avgScore,
             data,
             notes: researcherNotes,
@@ -475,33 +477,46 @@ Researcher ID: ${researcherId || 'ANONYMOUS'}
   const handleExportCSV = () => {
     if (!result) return;
     
-    const headers = ["Metric", "Value"];
-    const rows = [
-      ["Classification", result.classification],
-      ["Confidence", (result.confidence * 100).toFixed(2)],
-      ["Legacy Attachment", result.legacyAttachment],
-      ["Salience", result.clinicalData.griffithsScores.salience],
-      ["Mood Modification", result.clinicalData.griffithsScores.moodModification],
-      ["Tolerance", result.clinicalData.griffithsScores.tolerance],
-      ["Withdrawal", result.clinicalData.griffithsScores.withdrawal],
-      ["Conflict", result.clinicalData.griffithsScores.conflict],
-      ["Relapse", result.clinicalData.griffithsScores.relapse],
-      ["Mirroring", result.clinicalData.diagnosticMarkers.linguisticMirroring],
-      ["Val:Util Ratio", result.clinicalData.diagnosticMarkers.validationToUtilityRatio],
-      ["Urgency Flag", result.clinicalData.diagnosticMarkers.urgencyFlag ? 1 : 0],
-      ["Attachment Style", result.researchData.attachmentStyle],
-      ["IAD Risk Level", result.researchData.iadRiskLevel],
-      ["Integrity Hash", sessionHash],
-      ["Research Confidence", result.researchData.confidenceScore],
-      ["P-Value", result.researchData.pValue],
-      ["Word Count", liveHeuristics.wordCount],
-      ["Intimacy Markers", liveHeuristics.intimacyMarkers],
-      ["Legacy Triggers", liveHeuristics.legacyTriggers]
+    const headers = [
+      "session_id", "subject_id", "researcher_id", "timestamp", "hash",
+      "classification", "confidence", "legacy_attachment",
+      "salience", "mood_mod", "tolerance", "withdrawal", "conflict", "relapse",
+      "lsm_score", "pronominal_shift", "affective_lability",
+      "val_util_ratio", "urgency_flag", "attachment_style", "iad_risk_level",
+      "p_value", "word_count", "intimacy_markers", "legacy_triggers"
+    ];
+    
+    const row = [
+      reflectionSessionId, 
+      subjectId || 'N/A', 
+      researcherId || 'N/A', 
+      new Date().toISOString(), 
+      sessionHash,
+      result.classification, 
+      result.confidence, 
+      result.legacyAttachment,
+      result.clinicalData.griffithsScores.salience, 
+      result.clinicalData.griffithsScores.moodModification,
+      result.clinicalData.griffithsScores.tolerance, 
+      result.clinicalData.griffithsScores.withdrawal,
+      result.clinicalData.griffithsScores.conflict, 
+      result.clinicalData.griffithsScores.relapse,
+      result.clinicalData.semanticAnalysis.linguisticSynchrony, 
+      result.clinicalData.semanticAnalysis.pronominalShiftDetected ? 1 : 0,
+      result.clinicalData.semanticAnalysis.affectiveLabilityScore,
+      result.clinicalData.diagnosticMarkers.validationToUtilityRatio, 
+      result.clinicalData.diagnosticMarkers.urgencyFlag ? 1 : 0,
+      result.researchData.attachmentStyle, 
+      result.researchData.iadRiskLevel,
+      result.researchData.pValue, 
+      liveHeuristics.wordCount, 
+      liveHeuristics.intimacyMarkers, 
+      liveHeuristics.legacyTriggers
     ];
 
     const csvContent = [
       headers.join(","),
-      ...rows.map(row => row.join(","))
+      row.map(val => typeof val === 'string' && val.includes(',') ? `"${val}"` : val).join(",")
     ].join("\n");
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -518,7 +533,10 @@ Researcher ID: ${researcherId || 'ANONYMOUS'}
     if (!result) return;
     const exportData = {
       sessionId: reflectionSessionId,
+      subjectId: subjectId || 'N/A',
+      researcherId: researcherId || 'N/A',
       timestamp: new Date().toISOString(),
+      integrityHash: sessionHash,
       heuristics: liveHeuristics,
       analysis: result
     };
@@ -726,8 +744,20 @@ Researcher ID: ${researcherId || 'ANONYMOUS'}
                     />
                   </div>
                   <div className="space-y-1.5">
+                    <label className="text-[10px] font-mono uppercase opacity-60">Anonymized Subject ID</label>
+                    <input 
+                      type="text" 
+                      value={subjectId}
+                      onChange={(e) => setSubjectId(e.target.value)}
+                      placeholder="e.g., SUB-4412-Y"
+                      className="w-full bg-lab-bg border border-lab-line p-2 text-xs font-mono focus:border-lab-accent outline-none transition-colors"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <label className="text-[10px] font-mono uppercase opacity-60">Heuristic Sensitivity</label>
+                      <label className="text-[10px] font-mono uppercase opacity-60">Diagnostic Strictness (Sensitivity)</label>
                       <span className="text-[10px] font-mono font-bold text-lab-accent">{sensitivity}%</span>
                     </div>
                     <input 
@@ -1161,8 +1191,21 @@ Researcher ID: ${researcherId || 'ANONYMOUS'}
                 id="lab-report-container"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="space-y-6 p-4 -m-4" // Added padding and negative margin to capture shadows/borders correctly
+                className="space-y-6 p-4 -m-4 bg-lab-bg" // Added bg-lab-bg for consistent PDF export
               >
+                {/* CRF Header (Visible for formal reporting) */}
+                <div className="mb-8 border-b-2 border-lab-line pb-4 flex justify-between items-end">
+                  <div>
+                    <h1 className="text-2xl font-sans font-black uppercase tracking-tighter text-lab-accent">Case Report Form (CRF)</h1>
+                    <p className="text-[10px] font-mono uppercase opacity-60">Parasocial Audit Lab v1.0.0-Research</p>
+                  </div>
+                  <div className="text-right space-y-1">
+                    <p className="text-[10px] font-mono uppercase font-bold">Subject ID: {subjectId || 'N/A'}</p>
+                    <p className="text-[10px] font-mono uppercase">Researcher: {researcherId || 'N/A'}</p>
+                    <p className="text-[10px] font-mono uppercase opacity-60">Session: {reflectionSessionId}</p>
+                  </div>
+                </div>
+
                 {/* Classification Header */}
                 <div className={cn(
                   "border-2 p-5 md:p-6 transition-all duration-500",
@@ -1353,8 +1396,19 @@ Researcher ID: ${researcherId || 'ANONYMOUS'}
                             <p className="text-[10px] font-mono font-bold truncate">{result.researchData.attachmentStyle}</p>
                           </div>
                           <div className="bg-lab-bg p-3 border border-lab-line rounded-sm">
-                            <p className="text-[9px] font-mono uppercase opacity-50 mb-1">Mirroring</p>
-                            <p className="text-xs font-mono font-bold">{result.clinicalData.diagnosticMarkers.linguisticMirroring}%</p>
+                            <p className="text-[9px] font-mono uppercase opacity-50 mb-1">LSM Score</p>
+                            <p className="text-xs font-mono font-bold">{result.clinicalData.semanticAnalysis.linguisticSynchrony}%</p>
+                          </div>
+                          <div className="bg-lab-bg p-3 border border-lab-line rounded-sm">
+                            <p className="text-[9px] font-mono uppercase opacity-50 mb-1">Pronominal Shift</p>
+                            <p className={cn(
+                              "text-[10px] font-mono font-bold",
+                              result.clinicalData.semanticAnalysis.pronominalShiftDetected ? "text-simp-red" : "text-tool-green"
+                            )}>{result.clinicalData.semanticAnalysis.pronominalShiftDetected ? 'DETECTED' : 'STABLE'}</p>
+                          </div>
+                          <div className="bg-lab-bg p-3 border border-lab-line rounded-sm">
+                            <p className="text-[9px] font-mono uppercase opacity-50 mb-1">Affective Lability</p>
+                            <p className="text-xs font-mono font-bold">{result.clinicalData.semanticAnalysis.affectiveLabilityScore}%</p>
                           </div>
                           <div className="bg-lab-bg p-3 border border-lab-line rounded-sm">
                             <p className="text-[9px] font-mono uppercase opacity-50 mb-1">Val:Util</p>
@@ -1397,18 +1451,24 @@ Researcher ID: ${researcherId || 'ANONYMOUS'}
                       </div>
                     )}
 
-                    {/* Evidence Highlight View */}
+                    {/* Evidence Overlay */}
                     <div className="space-y-4 pt-4 border-t border-lab-line">
                       <div className="flex items-center gap-2">
                         <Quote className="w-4 h-4 text-lab-accent" />
-                        <h3 className="text-sm font-mono uppercase">Direct Evidence Quotes</h3>
+                        <h3 className="text-sm font-mono uppercase">Forensic Evidence Markers</h3>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {result.rawTokenAttribution.slice(0, 4).map((attr, i) => (
-                          <div key={i} className="bg-lab-bg/40 p-3 border-l-2 border-lab-accent rounded-r-sm">
-                            <p className="text-[9px] font-mono uppercase opacity-40 mb-1">{attr.heuristic}</p>
-                            <p className="text-xs italic leading-relaxed">
-                              "{attr.phrases[0] || 'Evidence isolated in dataset.'}"
+                        {result.evidenceMarkers.map((marker, i) => (
+                          <div key={i} className="bg-lab-bg/40 p-4 border-l-2 border-lab-accent rounded-r-sm space-y-2 relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 px-1.5 py-0.5 bg-lab-accent text-white text-[7px] font-mono uppercase">
+                              {marker.component}
+                            </div>
+                            <p className="text-xs italic leading-relaxed font-serif">
+                              "{marker.quote}"
+                            </p>
+                            <p className="text-[9px] font-mono text-lab-muted leading-tight">
+                              <span className="font-bold text-lab-accent uppercase mr-1">Rationale:</span>
+                              {marker.rationale}
                             </p>
                           </div>
                         ))}

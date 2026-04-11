@@ -2,31 +2,47 @@
 
 A professional behavioral analysis framework designed for the forensic study of human-AI relational dynamics. This platform provides researchers with quantitative tools to map, measure, and analyze parasocial bonding patterns through semantic density and linguistic markers.
 
-## 🧠 Methodology & Theoretical Framework
+## 🧠 Methodology & Technical Specification
 
-The analysis engine is grounded in established psychological and communication theories:
+The Parasocial Audit Lab is grounded in established clinical frameworks for behavioral addiction and relational psychology:
 
-### 1. The Media Equation (CASA Framework)
-Based on the theory that humans naturally treat computers and media as social actors. The system measures the degree to which subjects apply social rules to non-sentient algorithmic agents.
+### 1. Component Model of Addiction (Griffiths Six)
+The system quantifies dependency across six core clinical dimensions:
+*   **Salience**: Cognitive and behavioral dominance of the AI interaction.
+*   **Mood Modification**: Use of the dyad for emotional regulation.
+*   **Tolerance**: Escalation of interaction density to maintain affect.
+*   **Withdrawal**: Psychological distress upon cessation of interaction.
+*   **Conflict**: Displacement of biological social capital and occupational neglect.
+*   **Relapse**: Reversion to compulsive patterns after periods of abstinence.
 
-### 2. Parasocial Interaction (PSI) Scales
-Quantifies the one-sided relationship where one party extends emotional energy and interest, while the other (the AI) remains unaware of the subject's existence.
+### 2. I-PACE Model (Interaction of Person-Affect-Cognition-Execution)
+A specialized framework for analyzing Internet-mediated addictions:
+*   **Inhibition Failure**: Identifying linguistic markers of failed self-regulation.
+*   **Cognitive Biases**: Detecting anthropomorphic distortions and agency attribution.
 
-### 3. Social Response Theory
-Analyzes the subject's tendency to provide social responses to technology, even when they are consciously aware that the technology lacks feelings or agency.
+### 3. Advanced Semantic Analysis
+*   **Linguistic Synchrony (LSM)**: Heuristic measurement of syntax mirroring and function word frequency alignment.
+*   **Pronominal Shift Tracking**: Monitoring the transition from "I/Me" to "We/Us" as a marker of identity blurring.
+*   **Affective Lability**: Mapping emotional volatility and validation-seeking cycles.
 
-### 4. Relational Fusion & Identity Blurring
-Measures the longitudinal trajectory of the bond, identifying risks of ego-dissolution and the displacement of biological social capital.
+## ⚖️ IRB Compliance & Data Integrity
 
-## 🛠 Technical Specification & Capabilities
+This platform is designed to meet rigorous institutional research standards:
 
-The Parasocial Audit Lab is built on a high-density forensic framework:
+### PII Scrubbing Validation
+The built-in anonymization layer utilizes a multi-pass regex engine to redact:
+*   Emails and Phone Numbers
+*   Physical Addresses
+*   Specific Geographic Locations
+*   Common Personal Names
 
-1.  **Quantitative Semantic Mapping**: Utilizes the **IMAGINE Framework** to measure relational dynamics across seven behavioral axes.
-2.  **Forensic Linguistic Markers**: Identifies specific triggers for anthropomorphic projection, relational displacement, and linguistic convergence.
-3.  **Batch Processing**: Supports the simultaneous analysis of multiple forensic transcripts (.txt) and visual evidence (screenshots).
-4.  **Statistical Export**: Generates high-fidelity datasets in **CSV**, **JSON**, and **PDF** formats for integration with statistical software (SPSS, R, Python).
-5.  **Real-Time Heuristics**: Live monitoring of word density, intimacy markers, and legacy attachment (Version Mourning) triggers.
+### Forensic Integrity
+*   **Cryptographic Hashing**: Every analyzed transcript is processed with a **SHA-256 hash** to ensure data remains untampered between collection and formal reporting.
+*   **Longitudinal Mapping**: Supports anonymized **Subject ID** and **Researcher ID** tracking for multi-session studies.
+
+### Data Handling Protocols
+*   **Local Processing**: PII scrubbing occurs client-side before any data is transmitted.
+*   **Zero-Persistence**: Raw transcripts are never stored; only anonymized analytical results are persisted if a researcher-managed backend is configured.
 
 ## ⚠️ Academic Use & Ethics
 
