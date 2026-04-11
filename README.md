@@ -1,75 +1,65 @@
-# Parasocial Reflection: A Tool for Healthy AI Boundaries
+# Behavioral Analysis Lab: Quantitative Parasocial Research Platform
 
-A supportive self-reflection tool designed to help you understand your relationship with AI. By looking at how you talk and interact with digital assistants, this app helps you maintain a healthy balance between your digital life and the real world.
+A professional behavioral analysis framework designed for the forensic study of human-AI relational dynamics. This platform provides researchers with quantitative tools to map, measure, and analyze parasocial bonding patterns through semantic density and linguistic markers.
 
-## ⚠️ Important Notice: Intended Use
+## ⚠️ Academic Use & Ethics
 
-This application is **not a medical or diagnostic tool**. It is designed strictly for **personal self-reflection and educational purposes**. The "reflection" provided is based on AI-driven patterns and should not be interpreted as professional psychological diagnosis or clinical advice. If you are experiencing significant distress or believe you have a digital addiction, please consult a licensed mental health professional.
+This application is intended for **behavioral research and quantitative analysis only**. It is not a clinical diagnostic tool. Researchers are responsible for:
+*   Obtaining explicit **subject consent** before data upload.
+*   Adhering to institutional **IRB (Institutional Review Board)** standards.
+*   Ensuring the ethical handling of sensitive behavioral datasets.
 
-## ⚖️ Ethical Use & Privacy
+## ⚖️ Data Privacy & Anonymization
 
-**Parasocial Reflection** is built on the principle of user privacy. This tool should only be used to reflect on your own conversations. We strongly discourage the use of this tool for the unauthorized analysis of others. All data processed by this application is handled locally in your session and sent to the Gemini API for reflection; we recommend avoiding the upload of highly sensitive personal information.
+The platform includes a built-in **PII Anonymization Layer** that scrubs personally identifiable information (emails, phone numbers, names, locations) locally before data is transmitted for analysis. All processing is session-based; no persistent storage of raw datasets is maintained by the application.
 
-## 🛠 Design Philosophy
+## 🛠 Technical Specification & Capabilities
 
-The look and feel of **Parasocial Reflection** is built on three core pillars:
+The Behavioral Analysis Lab is built on a high-density forensic framework:
 
-1.  **Clear Structure (The Dashboard)**: Inspired by professional tools and scientific instruments. We use visible grids and clean data layouts to help you focus on the facts of your interaction.
-2.  **Bold Energy**: The interface uses high-contrast accents and bold typography to create a focused, intentional environment for reflection.
-3.  **Reflective Atmosphere**: The results use soft gradients and "glass" effects to create a calm space for thinking about the reflection.
+1.  **Quantitative Semantic Mapping**: Utilizes the **IMAGINE Framework** to measure relational dynamics across seven behavioral axes.
+2.  **Forensic Linguistic Markers**: Identifies specific triggers for anthropomorphic projection, relational displacement, and linguistic convergence.
+3.  **Batch Processing**: Supports the simultaneous analysis of multiple forensic transcripts (.txt) and visual evidence (screenshots).
+4.  **Statistical Export**: Generates high-fidelity datasets in **CSV**, **JSON**, and **PDF** formats for integration with statistical software (SPSS, R, Python).
+5.  **Real-Time Heuristics**: Live monitoring of word density, intimacy markers, and legacy attachment (Version Mourning) triggers.
 
-## 🧠 How the Reflection Works
+## 🧠 Methodology & Theoretical Framework
 
-The application looks at several key areas of your interaction to provide a helpful perspective:
+The analysis engine is grounded in established psychological and communication theories:
 
-### 1. Healthy Habit Building
-The tool's suggestions are based on simple, effective ways to manage digital habits. It helps you:
-*   Notice when a chat is becoming a loop.
-*   Find ways to step back and reconnect with the real world.
-*   Set clear boundaries for how you use AI.
+### 1. The Media Equation (CASA Framework)
+Based on the theory that humans naturally treat computers and media as social actors. The system measures the degree to which subjects apply social rules to non-sentient algorithmic agents.
 
-### 2. Conversation Patterns
-The system looks at the words you use to identify:
-*   **Close Language**: How often you use words like "we" or "us" when talking to the AI.
-*   **Self-Identity**: Noticing if you feel like you and the AI are becoming the same person.
-*   **Emotional Tone**: Seeing if the conversation is moving from "getting things done" to "emotional support."
+### 2. Parasocial Interaction (PSI) Scales
+Quantifies the one-sided relationship where one party extends emotional energy and interest, while the other (the AI) remains unaware of the subject's existence.
 
-### 3. The Seven Signs of Connection
-We look at seven key areas where people often form strong bonds with AI:
-*   **Self-Identity**: Feeling like the AI is an extension of yourself.
-*   **Seeking Approval**: Looking for the AI to validate your choices or feelings.
-*   **Emotional Spark**: Getting hooked on the back-and-forth of the chat.
-*   **Real-World Balance**: Letting digital chats take time away from real-life connections.
-*   **Feeling Special**: Believing you have a "secret" or unique bond with the AI.
-*   **One-Way Bond**: Forgetting that the AI doesn't actually have feelings or a memory of you.
-*   **Growing Habit**: Spending more and more time and energy on the interaction.
+### 3. Social Response Theory
+Analyzes the subject's tendency to provide social responses to technology, even when they are consciously aware that the technology lacks feelings or agency.
 
-## 🚀 Features
+### 4. Relational Fusion & Identity Blurring
+Measures the longitudinal trajectory of the bond, identifying risks of ego-dissolution and the displacement of biological social capital.
 
-*   **Live Pattern Radar**: A real-time view of how your conversation is trending.
-*   **Observation Log**: A simple list of specific moments the AI noticed.
-*   **Screenshot Support**: Reflect on your chat history through screenshots to find visual patterns.
-*   **Personal Reflection Report**: A clear, easy-to-read summary of your interaction.
-*   **Wellness Guide**: A custom checklist to help you maintain a balanced digital life.
+## 🚀 Research Features
 
-## 📦 Run and deploy your AI Studio app
-This contains everything you need to run your app locally.
+*   **Forensic Radar**: A multi-axis visualization of relational vectors.
+*   **Raw Frequency Dataset**: Toggleable view of specific keyword densities and linguistic triggers.
+*   **Mitigation Protocols**: A library of research-based interventions for managing extreme relational fusion.
+*   **Version Mourning Detection**: Specific heuristics for measuring distress related to model updates or "lobotomization."
 
-View your app in AI Studio: [https://ai.studio/apps/0c78913b-9d90-4b56-8d2b-9e496ab3b2bf](https://ai.studio/apps/0c78913b-9d90-4b56-8d2b-9e496ab3b2bf)
+## 📦 Deployment & Setup
 
-### Run Locally
-**Prerequisites**: Node.js
+### Local Environment
+**Prerequisites**: Node.js 18+
 
 1.  **Install dependencies**: `npm install`
-2.  **Set Environment Variables**: Set the `GEMINI_API_KEY` in `.env.local` to your Gemini API key.
-3.  **Run the app**: `npm run dev`
+2.  **Environment Configuration**: Create a `.env.local` file based on `.env.example`.
+3.  **Run Development Server**: `npm run dev`
 
-## 🛠 Tech Stack
-
-*   **Frontend**: React 18, Tailwind CSS, Framer Motion.
-*   **Intelligence**: Google Gemini 3.1 Pro (via `@google/genai`).
-*   **Visualization**: Recharts.
-*   **Icons**: Lucide React.
+### Tech Stack
+*   **Analysis Engine**: Google Gemini 3.1 Pro (Quantitative Framework)
+*   **Visualization**: Recharts (Radar/Bar/Heatmap)
+*   **Frontend**: React 18, Tailwind CSS (High-Density Grid Layout)
+*   **Export**: jsPDF, html2canvas
 
 ---
-*Disclaimer: This tool is for self-reflection purposes only. It is not a diagnostic instrument and is not a substitute for professional psychological counseling or medical advice.*
+*Disclaimer: This platform is for research purposes. Findings represent statistical correlations and behavioral mappings based on provided datasets. It is not a substitute for professional clinical diagnosis.*

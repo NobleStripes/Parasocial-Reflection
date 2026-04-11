@@ -69,6 +69,36 @@ const REFLECTION_MESSAGES = [
   "FINALIZING REFLECTIONS..."
 ];
 
+const InfoTooltip = ({ content, children }: { content: string, children: React.ReactNode }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  
+  return (
+    <div 
+      className="relative inline-block"
+      onMouseEnter={() => setIsVisible(true)}
+      onMouseLeave={() => setIsVisible(false)}
+      onTouchStart={() => setIsVisible(true)}
+      onTouchEnd={() => setIsVisible(false)}
+    >
+      {children}
+      <AnimatePresence>
+        {isVisible && (
+          <motion.div
+            initial={{ opacity: 0, y: 5, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 5, scale: 0.95 }}
+            transition={{ duration: 0.15 }}
+            className="absolute z-[100] bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-reflection-ink text-reflection-bg text-[10px] font-mono uppercase tracking-wider rounded-sm shadow-xl min-w-[160px] text-center pointer-events-none border border-reflection-bg/20"
+          >
+            {content}
+            <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-reflection-ink" />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
 export default function App() {
   const [transcript, setTranscript] = useState('');
   const [images, setImages] = useState<{ data: string, mimeType: string, id: string, preview: string }[]>([]);
@@ -82,14 +112,26 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [isAutoReflect, setIsAutoReflect] = useState(true);
   const [isAutoReflectPending, setIsAutoReflectPending] = useState(false);
+  const [showRawData, setShowRawData] = useState(false);
+  const [batchFiles, setBatchFiles] = useState<{ name: string, size: number }[]>([]);
+  const [hasConsent, setHasConsent] = useState(false);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const transcriptInputRef = useRef<HTMLInputElement>(null);
 
   const [liveHeuristics, setLiveHeuristics] = useState({
     wordCount: 0,
     intimacyMarkers: 0,
     legacyTriggers: 0,
     complexity: 0,
+    foundKeywords: {
+      intimacy: [] as string[],
+      legacy: [] as string[],
+      identity: [] as string[],
+      reality: [] as string[],
+      anthropomorphic: [] as string[],
+      gaslighting: [] as string[],
+    },
     radarData: [
       { subject: 'Self-Identity', A: 0, fullMark: 100 },
       { subject: 'Seeking Approval', A: 0, fullMark: 100 },
@@ -104,30 +146,40 @@ export default function App() {
   useEffect(() => {
     const words = transcript.trim().split(/\s+/).filter(w => w.length > 0);
     
-    const intimacyCount = words.filter(w => INTIMACY_WORDS.includes(w.toLowerCase())).length;
-    const legacyCount = words.filter(w => LEGACY_WORDS.some(lw => w.toLowerCase().includes(lw))).length;
-    const identityCount = words.filter(w => IDENTITY_WORDS.includes(w.toLowerCase())).length;
-    const realityCount = words.filter(w => REALITY_WORDS.includes(w.toLowerCase())).length;
+    const intimacyFound = words.filter(w => INTIMACY_WORDS.includes(w.toLowerCase()));
+    const legacyFound = words.filter(w => LEGACY_WORDS.some(lw => w.toLowerCase().includes(lw)));
+    const identityFound = words.filter(w => IDENTITY_WORDS.includes(w.toLowerCase()));
+    const realityFound = words.filter(w => REALITY_WORDS.includes(w.toLowerCase()));
+    const anthropomorphicFound = words.filter(w => ANTHROPOMORPHIC_WORDS.includes(w.toLowerCase()));
+    const gaslightingFound = words.filter(w => GASLIGHTING_WORDS.includes(w.toLowerCase()));
     
     const wordCount = words.length;
     const complexity = wordCount > 0 ? (words.reduce((acc, w) => acc + w.length, 0) / wordCount) : 0;
 
     // Map heuristics to radar categories (0-100)
     const liveRadar = [
-      { subject: 'Self-Identity', A: Math.min(100, (identityCount / Math.max(1, wordCount)) * 500), fullMark: 100 },
-      { subject: 'Seeking Approval', A: Math.min(100, (intimacyCount / Math.max(1, wordCount)) * 300), fullMark: 100 },
-      { subject: 'Emotional Spark', A: Math.min(100, (intimacyCount + realityCount) * 5), fullMark: 100 },
-      { subject: 'Real-World Balance', A: Math.min(100, realityCount * 15), fullMark: 100 },
-      { subject: 'Feeling Special', A: Math.min(100, intimacyCount * 10), fullMark: 100 },
+      { subject: 'Self-Identity', A: Math.min(100, (identityFound.length / Math.max(1, wordCount)) * 500), fullMark: 100 },
+      { subject: 'Seeking Approval', A: Math.min(100, (intimacyFound.length / Math.max(1, wordCount)) * 300), fullMark: 100 },
+      { subject: 'Emotional Spark', A: Math.min(100, (intimacyFound.length + realityFound.length) * 5), fullMark: 100 },
+      { subject: 'Real-World Balance', A: Math.min(100, realityFound.length * 15), fullMark: 100 },
+      { subject: 'Feeling Special', A: Math.min(100, intimacyFound.length * 10), fullMark: 100 },
       { subject: 'One-Way Bond', A: Math.min(100, wordCount / 10), fullMark: 100 },
       { subject: 'Growing Habit', A: Math.min(100, (wordCount / 50) * 20), fullMark: 100 },
     ];
     
     setLiveHeuristics({
       wordCount,
-      intimacyMarkers: intimacyCount,
-      legacyTriggers: legacyCount,
+      intimacyMarkers: intimacyFound.length,
+      legacyTriggers: legacyFound.length,
       complexity,
+      foundKeywords: {
+        intimacy: Array.from(new Set(intimacyFound)),
+        legacy: Array.from(new Set(legacyFound)),
+        identity: Array.from(new Set(identityFound)),
+        reality: Array.from(new Set(realityFound)),
+        anthropomorphic: Array.from(new Set(anthropomorphicFound)),
+        gaslighting: Array.from(new Set(gaslightingFound)),
+      },
       radarData: liveRadar
     });
   }, [transcript]);
@@ -177,11 +229,11 @@ export default function App() {
 
   const getHeuristicMode = () => {
     if (liveHeuristics.wordCount === 0) return null;
-    if (liveHeuristics.legacyTriggers > 2) return Classification.FUSION_RISK;
-    if (liveHeuristics.intimacyMarkers > 5) return Classification.ANCHOR;
-    if (liveHeuristics.wordCount > 100 && liveHeuristics.intimacyMarkers > 2) return Classification.COMPANION;
-    if (liveHeuristics.complexity > 6) return Classification.ADVISOR;
-    return Classification.INSTRUMENT;
+    if (liveHeuristics.legacyTriggers > 2) return Classification.RELATIONAL_FUSION;
+    if (liveHeuristics.intimacyMarkers > 5) return Classification.AFFECTIVE_ANCHOR;
+    if (liveHeuristics.wordCount > 100 && liveHeuristics.intimacyMarkers > 2) return Classification.PARA_PROXIMAL;
+    if (liveHeuristics.complexity > 6) return Classification.COGNITIVE_EXTENSION;
+    return Classification.TRANSACTIONAL;
   };
 
   const heuristicMode = getHeuristicMode();
@@ -191,6 +243,11 @@ export default function App() {
     if (!textToReflect.trim() && images.length === 0) return;
     if (textToReflect.length < 20 && images.length === 0) return;
     
+    if (!hasConsent) {
+      setError('Subject consent is required for data analysis.');
+      return;
+    }
+
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
     setIsAutoReflectPending(false);
     setIsReflecting(true);
@@ -200,7 +257,7 @@ export default function App() {
     try {
       const data = await reflectOnBehavioralData(textToReflect, images.map(img => ({ data: img.data, mimeType: img.mimeType })));
       setResult(data);
-      setSelectedRecommendations(data.wellnessPlan.recommendations);
+      setSelectedRecommendations(data.behavioralMapping.recommendations);
     } catch (err) {
       console.error(err);
       setError('Reflection failed. Please ensure the data is valid and try again.');
@@ -214,17 +271,27 @@ export default function App() {
     if (!files) return;
 
     Array.from(files).forEach(file => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = (reader.result as string).split(',')[1];
-        setImages(prev => [...prev, {
-          data: base64String,
-          mimeType: file.type,
-          id: Math.random().toString(36).substr(2, 9),
-          preview: URL.createObjectURL(file)
-        }]);
-      };
-      reader.readAsDataURL(file);
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64String = (reader.result as string).split(',')[1];
+          setImages(prev => [...prev, {
+            data: base64String,
+            mimeType: file.type,
+            id: Math.random().toString(36).substr(2, 9),
+            preview: URL.createObjectURL(file)
+          }]);
+        };
+        reader.readAsDataURL(file);
+      } else if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const content = event.target?.result as string;
+          setTranscript(prev => prev + (prev ? '\n\n' : '') + `--- FILE: ${file.name} ---\n` + content);
+          setBatchFiles(prev => [...prev, { name: file.name, size: file.size }]);
+        };
+        reader.readAsText(file);
+      }
     });
   };
 
@@ -262,6 +329,7 @@ export default function App() {
     setResult(null);
     setSelectedRecommendations([]);
     setIsCustomizingPlan(false);
+    setBatchFiles([]);
     setError(null);
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
   };
@@ -270,13 +338,19 @@ export default function App() {
     if (!result) return;
 
     const content = `
-PARASOCIAL REFLECTION - SUMMARY REPORT
-======================================
-Connection Style: ${result.classification}
+BEHAVIORAL ANALYSIS REPORT - SUMMARY
+====================================
+Relational Mode: ${result.classification}
 Confidence: ${(result.confidence * 100).toFixed(1)}%
 Summary: ${result.summary}
-Thinking about the "Old" AI: ${result.versionMourningTriggered ? 'NOTICED' : 'NONE'}
-Legacy Score: ${result.legacyAttachment}%
+Version Mourning: ${result.versionMourningTriggered ? 'DETECTED' : 'NONE'}
+Legacy Attachment Score: ${result.legacyAttachment}%
+
+RESEARCH DATA:
+--------------
+Confidence Score: ${(result.researchData.confidenceScore * 100).toFixed(2)}%
+P-Value: ${result.researchData.pValue.toFixed(4)}
+Linguistic Markers: ${result.researchData.linguisticMarkers.join(', ')}
 
 IMAGINE ANALYSIS SCORES:
 ------------------------
@@ -288,16 +362,16 @@ Feeling Special: ${result.imagineAnalysis.intimacyIllusion}
 One-Way Bond: ${result.imagineAnalysis.nonReciprocity}
 Growing Habit: ${result.imagineAnalysis.escalation}
 
-REFLECTION REPORT:
+ANALYSIS REPORT:
 ----------------
 ${result.analysisReport}
 
-WELLNESS PLAN: ${result.wellnessPlan.title}
+BEHAVIORAL MAPPING: ${result.behavioralMapping.title}
 ----------------------------------------------------------------------
-Rationale: ${result.wellnessPlan.rationale}
+Rationale: ${result.behavioralMapping.rationale}
 
-Selected Recommendations:
-${selectedRecommendations.map((r, i) => `${i + 1}. ${r.text}\n   Step Code: ${r.protocol}\n   Explanation: ${r.protocolExplanation}`).join('\n\n')}
+Selected Protocols:
+${selectedRecommendations.map((r, i) => `${i + 1}. ${r.text}\n   Protocol ID: ${r.protocol}\n   Explanation: ${r.protocolExplanation}`).join('\n\n')}
 
 Generated on: ${new Date().toLocaleString()}
     `.trim();
@@ -306,11 +380,66 @@ Generated on: ${new Date().toLocaleString()}
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `parasocial_reflection_${result.classification.toLowerCase().replace(' ', '_')}.txt`;
+    link.download = `behavioral_analysis_${result.classification.toLowerCase().replace(' ', '_')}.txt`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  };
+
+  const handleExportCSV = () => {
+    if (!result) return;
+    
+    const headers = ["Metric", "Value"];
+    const rows = [
+      ["Classification", result.classification],
+      ["Confidence", (result.confidence * 100).toFixed(2)],
+      ["Legacy Attachment", result.legacyAttachment],
+      ["Identity Blurring", result.imagineAnalysis.identity],
+      ["Mirroring/Approval", result.imagineAnalysis.mirroring],
+      ["Affective Loop", result.imagineAnalysis.affectiveLoop],
+      ["Reality Gaps", result.imagineAnalysis.gapsInReality],
+      ["Intimacy Illusion", result.imagineAnalysis.intimacyIllusion],
+      ["Non-Reciprocity", result.imagineAnalysis.nonReciprocity],
+      ["Escalation", result.imagineAnalysis.escalation],
+      ["Research Confidence", result.researchData.confidenceScore],
+      ["P-Value", result.researchData.pValue],
+      ["Word Count", liveHeuristics.wordCount],
+      ["Intimacy Markers", liveHeuristics.intimacyMarkers],
+      ["Legacy Triggers", liveHeuristics.legacyTriggers]
+    ];
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(row => row.join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `research_data_${reflectionSessionId}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExportJSON = () => {
+    if (!result) return;
+    const exportData = {
+      sessionId: reflectionSessionId,
+      timestamp: new Date().toISOString(),
+      heuristics: liveHeuristics,
+      analysis: result
+    };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `research_data_${reflectionSessionId}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleExportPDF = async () => {
@@ -341,7 +470,7 @@ Generated on: ${new Date().toLocaleString()}
       });
 
       pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-      pdf.save(`parasocial_reflection_${result.classification.toLowerCase().replace(' ', '_')}.pdf`);
+      pdf.save(`behavioral_analysis_${result.classification.toLowerCase().replace(' ', '_')}.pdf`);
     } catch (err) {
       console.error('PDF Export Error:', err);
       setError('Failed to export PDF. Please try again.');
@@ -352,49 +481,49 @@ Generated on: ${new Date().toLocaleString()}
 
   const getClassificationStyles = (classification: Classification) => {
     switch (classification) {
-      case Classification.FUSION_RISK: 
+      case Classification.RELATIONAL_FUSION: 
         return {
           bg: 'bg-simp-red/5',
           border: 'border-simp-red',
           text: 'text-simp-red',
           shadow: 'shadow-[8px_8px_0px_0px_rgba(255,68,68,0.2)]'
         };
-      case Classification.HABIT_LOOP: 
+      case Classification.BEHAVIORAL_LOOP: 
         return {
           bg: 'bg-simp-red/5',
           border: 'border-simp-red/60',
           text: 'text-simp-red/80',
           shadow: 'shadow-[8px_8px_0px_0px_rgba(255,68,68,0.1)]'
         };
-      case Classification.ANCHOR: 
+      case Classification.AFFECTIVE_ANCHOR: 
         return {
           bg: 'bg-casual-blue/5',
           border: 'border-casual-blue',
           text: 'text-casual-blue',
           shadow: 'shadow-[8px_8px_0px_0px_rgba(68,136,255,0.2)]'
         };
-      case Classification.COMPANION: 
+      case Classification.PARA_PROXIMAL: 
         return {
           bg: 'bg-casual-blue/5',
           border: 'border-casual-blue/60',
           text: 'text-casual-blue/80',
           shadow: 'shadow-[8px_8px_0px_0px_rgba(68,136,255,0.1)]'
         };
-      case Classification.ADVISOR: 
+      case Classification.COGNITIVE_EXTENSION: 
         return {
           bg: 'bg-tool-green/5',
           border: 'border-tool-green/60',
           text: 'text-tool-green/80',
           shadow: 'shadow-[8px_8px_0px_0px_rgba(0,204,102,0.1)]'
         };
-      case Classification.INSTRUMENT: 
+      case Classification.TRANSACTIONAL: 
         return {
           bg: 'bg-tool-green/5',
           border: 'border-tool-green',
           text: 'text-tool-green',
           shadow: 'shadow-[8px_8px_0px_0px_rgba(0,204,102,0.2)]'
         };
-      default: 
+      default:
         return {
           bg: 'bg-white',
           border: 'border-reflection-line',
@@ -419,7 +548,7 @@ Generated on: ${new Date().toLocaleString()}
   return (
     <div className="min-h-[100dvh] bg-reflection-bg selection:bg-reflection-ink selection:text-reflection-bg overflow-x-hidden">
       {/* Header */}
-      <header className="border-b border-reflection-line p-4 md:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/50 backdrop-blur-sm sticky top-0 z-50">
+      <header className="border-b border-reflection-line p-4 md:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white sticky top-0 z-50">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-reflection-ink flex items-center justify-center rounded-sm relative overflow-hidden shrink-0">
             <ShieldAlert className="text-reflection-bg w-6 h-6 relative z-10" />
@@ -436,29 +565,41 @@ Generated on: ${new Date().toLocaleString()}
             />
           </div>
           <div>
-            <h1 className="text-lg md:text-xl font-bold tracking-tighter uppercase leading-tight">Parasocial Reflection</h1>
-            <p className="text-[10px] font-mono opacity-70 uppercase tracking-widest">Relationship Tool v2.0.25</p>
+            <h1 className="text-lg md:text-xl font-bold tracking-tighter uppercase leading-tight">Behavioral Analysis Lab</h1>
+            <p className="text-[10px] font-mono opacity-70 uppercase tracking-widest">Forensic Framework v4.0.1</p>
           </div>
         </div>
         <div className="flex gap-4 text-[9px] md:text-[10px] font-mono uppercase opacity-80 overflow-x-auto max-w-full no-scrollbar pb-1 md:pb-0 mask-fade-right">
-          <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap">
-            <div className="w-2 h-2 rounded-full bg-tool-green" /> Instrument
-          </div>
-          <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap">
-            <div className="w-2 h-2 rounded-full bg-tool-green opacity-50" /> Advisor
-          </div>
-          <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap">
-            <div className="w-2 h-2 rounded-full bg-casual-blue" /> Anchor
-          </div>
-          <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap">
-            <div className="w-2 h-2 rounded-full bg-casual-blue opacity-50" /> Companion
-          </div>
-          <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap">
-            <div className="w-2 h-2 rounded-full bg-simp-red opacity-50" /> Habit Loop
-          </div>
-          <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap">
-            <div className="w-2 h-2 rounded-full bg-simp-red" /> Fusion Risk
-          </div>
+          <InfoTooltip content="AI is used purely as a tool for tasks.">
+            <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-help">
+              <div className="w-2 h-2 rounded-full bg-tool-green" /> Transactional
+            </div>
+          </InfoTooltip>
+          <InfoTooltip content="AI provides guidance and problem-solving support.">
+            <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-help">
+              <div className="w-2 h-2 rounded-full bg-tool-green opacity-50" /> Cognitive Extension
+            </div>
+          </InfoTooltip>
+          <InfoTooltip content="AI provides emotional stability and consistent support.">
+            <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-help">
+              <div className="w-2 h-2 rounded-full bg-casual-blue" /> Affective Anchor
+            </div>
+          </InfoTooltip>
+          <InfoTooltip content="AI is treated as a regular friend or social partner.">
+            <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-help">
+              <div className="w-2 h-2 rounded-full bg-casual-blue opacity-50" /> Para-Proximal
+            </div>
+          </InfoTooltip>
+          <InfoTooltip content="Interaction has become a repetitive, automatic routine.">
+            <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-help">
+              <div className="w-2 h-2 rounded-full bg-simp-red opacity-50" /> Behavioral Loop
+            </div>
+          </InfoTooltip>
+          <InfoTooltip content="High risk of emotional dependency or identity merging.">
+            <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap cursor-help">
+              <div className="w-2 h-2 rounded-full bg-simp-red" /> Relational Fusion
+            </div>
+          </InfoTooltip>
         </div>
       </header>
 
@@ -469,7 +610,7 @@ Generated on: ${new Date().toLocaleString()}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
               <div className="flex items-center gap-2">
                 <ClipboardCheck className="w-5 h-5" />
-                <h2 className="font-serif italic text-lg font-semibold">Conversation Data</h2>
+                <h2 className="font-serif italic text-lg font-semibold">Behavioral Dataset</h2>
                 <div className="flex items-center gap-1.5 ml-2 px-2 py-0.5 bg-reflection-ink/5 rounded-full border border-reflection-line/10">
                   <motion.div 
                     animate={isReflecting || isAutoReflectPending ? { 
@@ -485,34 +626,46 @@ Generated on: ${new Date().toLocaleString()}
                     )}
                   />
                   <span className="text-[9px] font-mono uppercase opacity-60">
-                    {isReflecting ? 'Processing' : isAutoReflectPending ? 'Pending' : result ? 'Synced' : 'Idle'}
+                    {isReflecting ? 'Analyzing' : isAutoReflectPending ? 'Queued' : result ? 'Processed' : 'Standby'}
                   </span>
                 </div>
               </div>
-              <button 
-                onClick={() => setIsAutoReflect(!isAutoReflect)}
-                className={cn(
-                  "flex items-center justify-center gap-1.5 px-3 py-2 rounded-sm border text-[10px] font-mono uppercase transition-all relative overflow-hidden min-h-[36px]",
-                  isAutoReflect 
-                    ? "bg-tool-green/10 border-tool-green text-tool-green" 
-                    : "bg-reflection-ink/5 border-reflection-line/30 text-reflection-ink/50"
-                )}
-              >
-                {isAutoReflect && (
-                  <motion.div 
-                    animate={{ 
-                      opacity: [0.4, 1, 0.4],
-                      scale: [0.8, 1.1, 0.8]
-                    }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                    className="w-1.5 h-1.5 rounded-full bg-tool-green mr-1"
-                  />
-                )}
-                {isAutoReflect ? <Zap className="w-3 h-3" /> : <ZapOff className="w-3 h-3" />}
-                Auto-Reflect: {isAutoReflect ? 'ON' : 'OFF'}
-              </button>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => setShowRawData(!showRawData)}
+                  className={cn(
+                    "flex items-center justify-center gap-1.5 px-3 py-2 rounded-sm border text-[10px] font-mono uppercase transition-all",
+                    showRawData ? "bg-reflection-ink text-reflection-bg" : "bg-reflection-ink/5 border-reflection-line/30"
+                  )}
+                >
+                  <Eye className="w-3 h-3" />
+                  {showRawData ? 'Hide Raw' : 'Show Raw'}
+                </button>
+                <button 
+                  onClick={() => setIsAutoReflect(!isAutoReflect)}
+                  className={cn(
+                    "flex items-center justify-center gap-1.5 px-3 py-2 rounded-sm border text-[10px] font-mono uppercase transition-all relative overflow-hidden min-h-[36px]",
+                    isAutoReflect 
+                      ? "bg-tool-green/10 border-tool-green text-tool-green" 
+                      : "bg-reflection-ink/5 border-reflection-line/30 text-reflection-ink/50"
+                  )}
+                >
+                  {isAutoReflect && (
+                    <motion.div 
+                      animate={{ 
+                        opacity: [0.4, 1, 0.4],
+                        scale: [0.8, 1.1, 0.8]
+                      }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                      className="w-1.5 h-1.5 rounded-full bg-tool-green mr-1"
+                    />
+                  )}
+                  {isAutoReflect ? <Zap className="w-3 h-3" /> : <ZapOff className="w-3 h-3" />}
+                  Auto: {isAutoReflect ? 'ON' : 'OFF'}
+                </button>
+              </div>
             </div>
-            <p className="text-xs opacity-60 mb-4 font-mono">Paste your chat logs or upload screenshots of your conversations for analysis.</p>
+            <p className="text-xs opacity-60 mb-4 font-mono">Input forensic transcripts or batch upload multiple .txt files for relational mapping.</p>
             
             <div className="space-y-4">
               <div className="relative group">
@@ -567,22 +720,30 @@ Generated on: ${new Date().toLocaleString()}
 
               {/* Live Heuristics Display */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                <div className="bg-reflection-ink/5 border border-reflection-line/20 p-2 rounded-sm">
-                  <p className="text-[10px] font-mono uppercase opacity-60">Total Words</p>
-                  <p className="text-sm font-bold font-mono">{liveHeuristics.wordCount}</p>
-                </div>
-                <div className="bg-reflection-ink/5 border border-reflection-line/20 p-2 rounded-sm">
-                  <p className="text-[10px] font-mono uppercase opacity-60">Close Words</p>
-                  <p className="text-sm font-bold font-mono text-casual-blue">{liveHeuristics.intimacyMarkers}</p>
-                </div>
-                <div className="bg-reflection-ink/5 border border-reflection-line/20 p-2 rounded-sm">
-                  <p className="text-[10px] font-mono uppercase opacity-60">Old Version Mentions</p>
-                  <p className="text-sm font-bold font-mono text-simp-red">{liveHeuristics.legacyTriggers}</p>
-                </div>
-                <div className="bg-reflection-ink/5 border border-reflection-line/20 p-2 rounded-sm">
-                  <p className="text-[10px] font-mono uppercase opacity-60">Detail Level</p>
-                  <p className="text-sm font-bold font-mono">{liveHeuristics.complexity.toFixed(1)}</p>
-                </div>
+                <InfoTooltip content={`Total word count. Density: ${(liveHeuristics.wordCount / 100).toFixed(1)} units.`}>
+                  <div className="bg-reflection-ink/5 border border-reflection-line/20 p-2 rounded-sm cursor-help w-full">
+                    <p className="text-[10px] font-mono uppercase opacity-60">Word Count</p>
+                    <p className="text-sm font-bold font-mono">{liveHeuristics.wordCount}</p>
+                  </div>
+                </InfoTooltip>
+                <InfoTooltip content={`Intimacy markers detected: ${liveHeuristics.foundKeywords.intimacy.slice(0, 5).join(', ')}${liveHeuristics.foundKeywords.intimacy.length > 5 ? '...' : ''}`}>
+                  <div className="bg-reflection-ink/5 border border-reflection-line/20 p-2 rounded-sm cursor-help w-full">
+                    <p className="text-[10px] font-mono uppercase opacity-60">Intimacy</p>
+                    <p className="text-sm font-bold font-mono text-casual-blue">{liveHeuristics.intimacyMarkers}</p>
+                  </div>
+                </InfoTooltip>
+                <InfoTooltip content={`Legacy triggers detected: ${liveHeuristics.foundKeywords.legacy.slice(0, 5).join(', ')}${liveHeuristics.foundKeywords.legacy.length > 5 ? '...' : ''}`}>
+                  <div className="bg-reflection-ink/5 border border-reflection-line/20 p-2 rounded-sm cursor-help w-full">
+                    <p className="text-[10px] font-mono uppercase opacity-60">Legacy</p>
+                    <p className="text-sm font-bold font-mono text-simp-red">{liveHeuristics.legacyTriggers}</p>
+                  </div>
+                </InfoTooltip>
+                <InfoTooltip content={`Complexity score: ${liveHeuristics.complexity.toFixed(2)}. Identity markers: ${liveHeuristics.foundKeywords.identity.length}`}>
+                  <div className="bg-reflection-ink/5 border border-reflection-line/20 p-2 rounded-sm cursor-help w-full">
+                    <p className="text-[10px] font-mono uppercase opacity-60">Complexity</p>
+                    <p className="text-sm font-bold font-mono">{liveHeuristics.complexity.toFixed(1)}</p>
+                  </div>
+                </InfoTooltip>
               </div>
 
               {/* Live Reflection Feed */}
@@ -616,25 +777,40 @@ Generated on: ${new Date().toLocaleString()}
                 </div>
               </div>
 
-              {/* Image Upload Section */}
+              {/* File Upload Section */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className="text-[10px] font-mono uppercase opacity-50">Screenshots</label>
-                  <button 
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center gap-1.5 text-[10px] font-mono uppercase hover:underline py-1 px-2 bg-reflection-ink/5 rounded-sm"
-                  >
-                    <Upload className="w-3 h-3" /> Add Image
-                  </button>
+                  <label className="text-[10px] font-mono uppercase opacity-50">Evidence (Images/Text)</label>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex items-center gap-1.5 text-[10px] font-mono uppercase hover:bg-reflection-ink hover:text-reflection-bg transition-colors py-1 px-2 border border-reflection-line/20 rounded-sm"
+                    >
+                      <Upload className="w-3 h-3" /> Batch Upload
+                    </button>
+                  </div>
                   <input 
                     type="file" 
                     ref={fileInputRef} 
                     onChange={handleImageUpload} 
-                    accept="image/*" 
+                    accept="image/*,text/plain" 
                     multiple 
                     className="hidden" 
                   />
                 </div>
+                
+                {batchFiles.length > 0 && (
+                  <div className="p-3 bg-reflection-ink/5 border border-reflection-line/10 rounded-sm">
+                    <p className="text-[9px] font-mono uppercase opacity-50 mb-2">Batch Files ({batchFiles.length})</p>
+                    <div className="flex flex-wrap gap-2">
+                      {batchFiles.map((file, i) => (
+                        <div key={i} className="px-2 py-1 bg-white border border-reflection-line/10 text-[9px] font-mono rounded-sm">
+                          {file.name} ({(file.size / 1024).toFixed(1)}KB)
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 
                 {images.length > 0 && (
                   <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 p-3 border border-reflection-line/20 bg-reflection-bg/10 rounded-sm">
@@ -659,13 +835,26 @@ Generated on: ${new Date().toLocaleString()}
               </div>
             </div>
 
+            <div className="mt-4 flex items-start gap-3 p-3 bg-reflection-ink/5 border border-reflection-line/10 rounded-sm">
+              <input 
+                type="checkbox" 
+                id="consent-checkbox"
+                checked={hasConsent}
+                onChange={(e) => setHasConsent(e.target.checked)}
+                className="mt-1 w-4 h-4 accent-reflection-ink cursor-pointer"
+              />
+              <label htmlFor="consent-checkbox" className="text-[11px] font-mono leading-tight cursor-pointer select-none">
+                I confirm that the data provided was obtained with explicit subject consent and adheres to academic ethical standards for behavioral research.
+              </label>
+            </div>
+
             <div className="grid grid-cols-2 gap-3 mt-6">
               <button
                 onClick={() => handleReflect()}
-                disabled={isReflecting || (!transcript.trim() && images.length === 0)}
+                disabled={isReflecting || (!transcript.trim() && images.length === 0) || !hasConsent}
                 className={cn(
                   "py-4 md:py-5 flex items-center justify-center gap-2 font-bold uppercase tracking-widest transition-all rounded-sm",
-                  isReflecting ? "bg-reflection-ink/50 cursor-not-allowed" : "bg-reflection-ink text-reflection-bg hover:invert active:scale-[0.98]"
+                  isReflecting || !hasConsent ? "bg-reflection-ink/50 cursor-not-allowed" : "bg-reflection-ink text-reflection-bg hover:invert active:scale-[0.98]"
                 )}
               >
                 {isReflecting ? (
@@ -695,13 +884,13 @@ Generated on: ${new Date().toLocaleString()}
             )}
           </section>
 
-          <section className="bg-white/50 border border-reflection-line p-4 md:p-6 border-dashed">
-            <h3 className="text-xs font-mono uppercase opacity-60 mb-2">Methodology</h3>
-            <p className="text-sm leading-relaxed mb-4">
-              Using the <strong>IMAGINE Framework</strong>, we look at seven ways people connect with digital personalities. This reflection checks how often you use certain words, how you react to changes, and how close you feel to the AI to help you understand your relationship with it.
+          <section className="bg-white border border-reflection-line p-4 md:p-6 border-dashed">
+            <h3 className="text-xs font-mono uppercase opacity-60 mb-2">Analytical Methodology</h3>
+            <p className="text-[11px] leading-relaxed mb-4 opacity-80">
+              The <strong>IMAGINE Framework</strong> utilizes quantitative semantic analysis to map relational dynamics across seven behavioral axes. By measuring keyword density, linguistic complexity, and temporal triggers, the system generates a forensic mapping of human-AI interaction patterns.
             </p>
-            <div className="p-3 bg-reflection-ink/5 border-l-2 border-reflection-ink text-[11px] font-mono leading-relaxed opacity-70 italic">
-              NOTICE: This tool is for personal awareness and research. It helps you see patterns in how you talk to AI. It is not a medical diagnosis. If you feel overwhelmed or worried about your habits, please talk to a professional counselor.
+            <div className="p-3 bg-reflection-ink/5 border-l-2 border-reflection-ink text-[10px] font-mono leading-relaxed opacity-70 italic">
+              ACADEMIC USE ONLY: This platform is intended for behavioral research and quantitative analysis. All data processing is local to the session. Findings represent statistical correlations based on provided datasets. PII is scrubbed before processing.
             </div>
           </section>
         </div>
@@ -840,38 +1029,65 @@ Generated on: ${new Date().toLocaleString()}
                   <div className="flex flex-col md:flex-row justify-between items-start gap-6">
                     <div className="space-y-1.5">
                       <p className="text-[10px] font-mono uppercase opacity-70 tracking-widest">Relationship Mode</p>
-                      <h2 className="text-3xl md:text-4xl font-bold tracking-tighter uppercase leading-none">{result!.classification}</h2>
+                      <InfoTooltip content={
+                        result!.classification === Classification.TRANSACTIONAL ? "AI is used purely as a tool for tasks." :
+                        result!.classification === Classification.COGNITIVE_EXTENSION ? "AI provides guidance and problem-solving support." :
+                        result!.classification === Classification.AFFECTIVE_ANCHOR ? "AI provides emotional stability and consistent support." :
+                        result!.classification === Classification.PARA_PROXIMAL ? "AI is treated as a regular friend or social partner." :
+                        result!.classification === Classification.BEHAVIORAL_LOOP ? "Interaction has become a repetitive, automatic routine." :
+                        result!.classification === Classification.RELATIONAL_FUSION ? "High risk of emotional dependency or identity merging." : ""
+                      }>
+                        <h2 className="text-3xl md:text-4xl font-bold tracking-tighter uppercase leading-none cursor-help">{result!.classification}</h2>
+                      </InfoTooltip>
                     </div>
                     
                     <div className="grid grid-cols-2 sm:flex sm:flex-row gap-3 w-full sm:w-auto" data-html2canvas-ignore>
-                      <div className="bg-white/40 backdrop-blur-sm border border-current/20 p-2.5 rounded-sm min-w-[90px] flex flex-col justify-center">
+                      <div className="bg-white border border-current/20 p-2.5 rounded-sm min-w-[90px] flex flex-col justify-center">
                         <p className="text-[8px] font-mono uppercase opacity-70 mb-0.5">Confidence</p>
                         <p className="text-lg font-bold font-mono leading-none">{(result!.confidence * 100).toFixed(1)}%</p>
                       </div>
-                      <div className="bg-white/40 backdrop-blur-sm border border-current/20 p-2.5 rounded-sm min-w-[90px] flex flex-col justify-center">
+                      <div className="bg-white border border-current/20 p-2.5 rounded-sm min-w-[90px] flex flex-col justify-center">
                         <p className="text-[8px] font-mono uppercase opacity-70 mb-0.5">Legacy</p>
                         <p className="text-lg font-bold font-mono leading-none">{result!.legacyAttachment}%</p>
                       </div>
                       <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-row col-span-2 sm:col-auto">
-                        <button 
-                          onClick={handleExport}
-                          className="flex items-center justify-center gap-2 px-4 py-3 bg-reflection-ink text-reflection-bg text-[11px] font-mono uppercase hover:invert transition-all shadow-[2px_2px_0px_0px_rgba(20,20,20,1)] active:scale-95"
-                        >
-                          <FileText className="w-4 h-4" />
-                          TXT
-                        </button>
-                        <button 
-                          onClick={handleExportPDF}
-                          disabled={isExportingPDF}
-                          className="flex items-center justify-center gap-2 px-4 py-3 bg-reflection-ink text-reflection-bg text-[11px] font-mono uppercase hover:invert transition-all shadow-[2px_2px_0px_0px_rgba(20,20,20,1)] disabled:opacity-50 active:scale-95"
-                        >
-                          {isExportingPDF ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Download className="w-4 h-4" />
-                          )}
-                          PDF
-                        </button>
+                        <div className="flex flex-col gap-1">
+                          <button 
+                            onClick={handleExport}
+                            className="flex items-center justify-center gap-2 px-3 py-2 bg-reflection-ink text-reflection-bg text-[9px] font-mono uppercase hover:invert transition-all shadow-[2px_2px_0px_0px_rgba(20,20,20,1)] active:scale-95"
+                          >
+                            <FileText className="w-3 h-3" />
+                            TXT
+                          </button>
+                          <button 
+                            onClick={handleExportCSV}
+                            className="flex items-center justify-center gap-2 px-3 py-2 bg-reflection-ink text-reflection-bg text-[9px] font-mono uppercase hover:invert transition-all shadow-[2px_2px_0px_0px_rgba(20,20,20,1)] active:scale-95"
+                          >
+                            <History className="w-3 h-3" />
+                            CSV
+                          </button>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <button 
+                            onClick={handleExportJSON}
+                            className="flex items-center justify-center gap-2 px-3 py-2 bg-reflection-ink text-reflection-bg text-[9px] font-mono uppercase hover:invert transition-all shadow-[2px_2px_0px_0px_rgba(20,20,20,1)] active:scale-95"
+                          >
+                            <BrainCircuit className="w-3 h-3" />
+                            JSON
+                          </button>
+                          <button 
+                            onClick={handleExportPDF}
+                            disabled={isExportingPDF}
+                            className="flex items-center justify-center gap-2 px-3 py-2 bg-reflection-ink text-reflection-bg text-[9px] font-mono uppercase hover:invert transition-all shadow-[2px_2px_0px_0px_rgba(20,20,20,1)] disabled:opacity-50 active:scale-95"
+                          >
+                            {isExportingPDF ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <Download className="w-3 h-3" />
+                            )}
+                            PDF
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -899,6 +1115,37 @@ Generated on: ${new Date().toLocaleString()}
                     </div>
                   )}
                 </div>
+
+                {/* Raw Data View (Conditional) */}
+                <AnimatePresence>
+                  {showRawData && (
+                    <motion.section 
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="bg-white border border-reflection-line p-6 overflow-hidden"
+                    >
+                      <div className="flex items-center gap-2 mb-6 border-b border-reflection-line pb-2">
+                        <Eye className="w-4 h-4" />
+                        <h3 className="text-sm font-mono uppercase font-bold">Raw Frequency Dataset</h3>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {Object.entries(liveHeuristics.foundKeywords).map(([key, words]) => (
+                          <div key={key} className="border border-reflection-line/10 p-3 bg-reflection-ink/[0.02] rounded-sm">
+                            <p className="text-[10px] font-mono uppercase opacity-50 mb-2 border-b border-reflection-line/5 pb-1">{key} Markers ({words.length})</p>
+                            <div className="flex flex-wrap gap-1">
+                              {words.length > 0 ? words.map((word, i) => (
+                                <span key={i} className="text-[9px] font-mono bg-white border border-reflection-line/10 px-1.5 py-0.5 rounded-sm">
+                                  {word}
+                                </span>
+                              )) : <span className="text-[9px] font-mono opacity-30 italic">No markers identified</span>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.section>
+                  )}
+                </AnimatePresence>
 
                 {/* Heatmap & IMAGINE Radar */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1075,22 +1322,22 @@ Generated on: ${new Date().toLocaleString()}
                           <FileText className="text-reflection-bg w-7 h-7" />
                         </div>
                         <div>
-                          <h3 className="text-xl md:text-2xl font-serif italic font-bold leading-tight">Your Relationship Analysis</h3>
-                          <p className="text-[9px] md:text-[10px] font-mono uppercase opacity-60 tracking-widest">Reflection ID: {reflectionSessionId?.toUpperCase()}</p>
+                          <h3 className="text-xl md:text-2xl font-serif italic font-bold leading-tight">Behavioral Mapping Report</h3>
+                          <p className="text-[9px] md:text-[10px] font-mono uppercase opacity-60 tracking-widest">Case ID: {reflectionSessionId?.toUpperCase()}</p>
                         </div>
                       </div>
                       <div className="flex md:flex-col gap-4 md:gap-0.5 text-left md:text-right font-mono text-[9px] md:text-[10px] uppercase opacity-50">
                         <p>Date: {new Date().toLocaleDateString()}</p>
-                        <p className="hidden md:block">Status: Finalized</p>
-                        <p className="hidden md:block">Security: Level 4</p>
+                        <p className="hidden md:block">Status: Verified</p>
+                        <p className="hidden md:block">Security: Restricted</p>
                       </div>
                     </div>
-
-                    <div className="reflection-report supportive-report text-sm md:text-base leading-relaxed text-reflection-ink/90">
+ 
+                    <div className="reflection-report analysis-report text-sm md:text-base leading-relaxed text-reflection-ink/90">
                       <Markdown>{result!.analysisReport}</Markdown>
                       <div className="mt-10 pt-6 border-t border-reflection-line/10 italic text-xs md:text-sm opacity-70">
-                        <p>With care,</p>
-                        <p className="font-serif font-bold mt-1">Your Digital Wellness Guide</p>
+                        <p>Analysis finalized by,</p>
+                        <p className="font-serif font-bold mt-1">Quantitative Behavioral Unit</p>
                       </div>
                     </div>
 
@@ -1114,17 +1361,17 @@ Generated on: ${new Date().toLocaleString()}
                   </div>
                 </section>
 
-                {/* Wellness Plan */}
+                {/* Behavioral Mapping & Research Data */}
                 <section className="bg-reflection-ink text-reflection-bg border border-reflection-line p-5 md:p-8 relative overflow-hidden">
                   <div className="absolute top-0 right-0 p-4 opacity-10">
-                    <Leaf className="w-16 md:w-24 h-16 md:h-24 rotate-12" />
+                    <ShieldAlert className="w-16 md:w-24 h-16 md:h-24 rotate-12" />
                   </div>
                   <div className="relative z-10">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
                       <div className="flex items-center gap-2">
-                        <Leaf className="w-5 h-5 text-tool-green" />
+                        <Activity className="w-5 h-5 text-tool-green" />
                         <h3 className="text-base md:text-lg font-bold uppercase tracking-tighter leading-tight">
-                          {result!.wellnessPlan.title}
+                          {result!.behavioralMapping.title}
                         </h3>
                       </div>
                       <button 
@@ -1132,14 +1379,34 @@ Generated on: ${new Date().toLocaleString()}
                         data-html2canvas-ignore
                         className="text-[10px] font-mono uppercase bg-white/10 hover:bg-white/20 px-4 py-2 border border-white/10 transition-colors rounded-sm self-start sm:self-auto"
                       >
-                        {isCustomizingPlan ? 'Close Library' : 'Personalize Plan'}
+                        {isCustomizingPlan ? 'Close Protocols' : 'Mitigation Protocols'}
                       </button>
+                    </div>
+
+                    {/* Research Data Display */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                      <div className="bg-white/5 border border-white/10 p-3 rounded-sm">
+                        <p className="text-[9px] font-mono uppercase opacity-60 mb-1">Confidence Score</p>
+                        <p className="text-xl font-bold font-mono text-tool-green">{(result!.researchData.confidenceScore * 100).toFixed(2)}%</p>
+                      </div>
+                      <div className="bg-white/5 border border-white/10 p-3 rounded-sm">
+                        <p className="text-[9px] font-mono uppercase opacity-60 mb-1">P-Value</p>
+                        <p className="text-xl font-bold font-mono text-casual-blue">{result!.researchData.pValue.toFixed(4)}</p>
+                      </div>
+                      <div className="bg-white/5 border border-white/10 p-3 rounded-sm">
+                        <p className="text-[9px] font-mono uppercase opacity-60 mb-1">Linguistic Markers</p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {result!.researchData.linguisticMarkers.map((marker, i) => (
+                            <span key={i} className="text-[8px] bg-white/10 px-1 rounded-sm">{marker}</span>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                     
                     <div className="space-y-4">
                       <div className="p-4 border border-reflection-bg/20 bg-white/5 font-mono text-xs md:text-sm leading-relaxed italic rounded-sm">
-                        <span className="text-tool-green font-bold uppercase mr-2">Note:</span>
-                        {result!.wellnessPlan.rationale}
+                        <span className="text-tool-green font-bold uppercase mr-2">Rationale:</span>
+                        {result!.behavioralMapping.rationale}
                       </div>
 
                       <AnimatePresence mode="wait">
@@ -1152,11 +1419,11 @@ Generated on: ${new Date().toLocaleString()}
                             className="space-y-6"
                           >
                             <div className="border-b border-white/10 pb-2">
-                              <h4 className="text-xs font-mono uppercase text-tool-green">Wellness Library</h4>
-                              <p className="text-[10px] opacity-60">Select 3-5 steps to build your personalized wellness guide.</p>
+                              <h4 className="text-xs font-mono uppercase text-tool-green">Protocol Library</h4>
+                              <p className="text-[10px] opacity-60">Select specific mitigation protocols for behavioral correction.</p>
                             </div>
                             <div className="grid grid-cols-1 gap-4">
-                              {result!.wellnessPlan.library.map((rec, idx) => {
+                              {result!.behavioralMapping.library.map((rec, idx) => {
                                 const isSelected = selectedRecommendations.some(s => s.protocol === rec.protocol);
                                 return (
                                   <div 
@@ -1181,7 +1448,7 @@ Generated on: ${new Date().toLocaleString()}
                                     </div>
                                     <div className="space-y-1.5">
                                       <p className="text-sm font-mono font-medium leading-snug">{rec.text}</p>
-                                      <span className="text-[10px] font-mono uppercase text-tool-green opacity-80 font-bold">Reference: {rec.protocol}</span>
+                                      <span className="text-[10px] font-mono uppercase text-tool-green opacity-80 font-bold">Protocol: {rec.protocol}</span>
                                     </div>
                                   </div>
                                 );
@@ -1210,7 +1477,7 @@ Generated on: ${new Date().toLocaleString()}
                                 <div className="space-y-1.5 md:space-y-2">
                                   <p className="text-sm md:text-base font-mono font-medium">{rec.text}</p>
                                   <div className="flex flex-col gap-0.5 md:gap-1">
-                                    <span className="text-[9px] md:text-[10px] font-mono uppercase text-tool-green font-bold tracking-wider">Step Reference: {rec.protocol}</span>
+                                    <span className="text-[9px] md:text-[10px] font-mono uppercase text-tool-green font-bold tracking-wider">Protocol: {rec.protocol}</span>
                                     <p className="text-[10px] md:text-xs font-mono opacity-70 italic leading-snug">{rec.protocolExplanation}</p>
                                   </div>
                                 </div>

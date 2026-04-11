@@ -30,47 +30,47 @@
   padding: 0.75rem;
 }
 
-.supportive-report {
+.analysis-report {
   white-space: pre-wrap;
 }
 
-.supportive-report h1, .supportive-report h2, .supportive-report h3 {
+.analysis-report h1, .analysis-report h2, .analysis-report h3 {
   @apply font-serif italic font-semibold mt-6 mb-3 border-b border-reflection-line/10 pb-2 md:mt-8 md:mb-4;
 }
 
-.supportive-report h1 { @apply text-xl md:text-2xl; }
-.supportive-report h2 { @apply text-lg md:text-xl; }
-.supportive-report h3 { @apply text-base md:text-lg; }
+.analysis-report h1 { @apply text-xl md:text-2xl; }
+.analysis-report h2 { @apply text-lg md:text-xl; }
+.analysis-report h3 { @apply text-base md:text-lg; }
 
-.supportive-report p {
+.analysis-report p {
   @apply mb-4 leading-relaxed text-reflection-ink/90 md:mb-6;
 }
 
-.supportive-report ul, .supportive-report ol {
+.analysis-report ul, .analysis-report ol {
   @apply mb-4 space-y-2 md:mb-6;
 }
 
-.supportive-report ul {
+.analysis-report ul {
   @apply list-disc list-inside;
 }
 
-.supportive-report ol {
+.analysis-report ol {
   @apply list-decimal list-inside;
 }
 
-.supportive-report li {
+.analysis-report li {
   @apply ml-1 md:ml-2;
 }
 
-.supportive-report strong {
+.analysis-report strong {
   @apply font-bold text-reflection-ink;
 }
 
-.supportive-report blockquote {
+.analysis-report blockquote {
   @apply border-l-4 border-reflection-ink/20 pl-4 italic my-4 py-2 bg-reflection-ink/[0.03] font-serif md:my-6;
 }
 
-.supportive-report code {
+.analysis-report code {
   @apply bg-reflection-ink text-reflection-bg px-1.5 py-0.5 rounded-sm font-mono text-[0.85em] md:text-[0.9em];
 }
 
@@ -87,10 +87,10 @@
   scrollbar-width: none;
 }
 
-.supportive-report pre {
+.analysis-report pre {
   @apply bg-reflection-ink text-reflection-bg p-3 rounded-sm font-mono text-[10px] md:text-xs my-4 overflow-x-auto border-l-4 border-tool-green md:p-4 md:my-6;
 }
 
-.supportive-report pre code {
+.analysis-report pre code {
   @apply bg-transparent p-0 text-inherit;
 }

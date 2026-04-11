@@ -1,12 +1,13 @@
 import { GoogleGenAI, Type } from "@google/genai";
+import { PII_REGEXES } from "../constants";
 
 export enum Classification {
-  INSTRUMENT = "Tool / Assistant",
-  ADVISOR = "Trusted Guide",
-  ANCHOR = "Emotional Support",
-  COMPANION = "Digital Friend",
-  HABIT_LOOP = "Daily Habit",
-  FUSION_RISK = "Deep Attachment"
+  TRANSACTIONAL = "Transactional",
+  COGNITIVE_EXTENSION = "Cognitive Extension",
+  AFFECTIVE_ANCHOR = "Affective Anchor",
+  PARA_PROXIMAL = "Para-Proximal",
+  BEHAVIORAL_LOOP = "Behavioral Loop",
+  RELATIONAL_FUSION = "Relational Fusion"
 }
 
 export interface HeatmapData {
@@ -27,6 +28,12 @@ export interface Recommendation {
   protocolExplanation: string;
 }
 
+export interface ResearchData {
+  confidenceScore: number;
+  pValue: number;
+  linguisticMarkers: string[];
+}
+
 export interface ReflectionResult {
   classification: Classification;
   confidence: number;
@@ -45,7 +52,8 @@ export interface ReflectionResult {
   connectionPatterns: ConnectionPattern[];
   heatmap: HeatmapData[];
   analysisReport: string;
-  wellnessPlan: {
+  researchData: ResearchData;
+  behavioralMapping: {
     title: string;
     recommendations: Recommendation[]; // The initial "active" set
     library: Recommendation[]; // A larger pool of context-aware suggestions
@@ -53,70 +61,78 @@ export interface ReflectionResult {
   };
 }
 
-const SYSTEM_INSTRUCTION = `You are a Supportive Digital Wellness Guide specializing in helping people understand their relationship with AI.
-Your task is to look at chat logs, posts, or images to provide a gentle, non-judgmental reflection on how a person is bonding with an AI.
+const SYSTEM_INSTRUCTION = `You are a Quantitative Behavioral Analysis framework specializing in the forensic study of human-AI parasocial dynamics.
+Your task is to analyze chat logs, posts, or images to provide a rigorous, objective analysis of relational bonding patterns.
 
-CRITICAL: Use "Human-Friendly" language. Avoid technical jargon or clinical terms. Imagine you are talking to a close friend with kindness and empathy. 
+LIFT VOCABULARY RESTRICTIONS: You are encouraged to use technical, clinical, and research-standard terminology.
+Keywords: "parasocial," "symptom," "forensic," "pathological," "dependency," "relational fusion," "cognitive offloading."
 
 TONE GUIDELINES:
-- NEVER use accusatory or judgmental language.
-- Avoid words like "symptoms," "triggers," "audit," "forensic," "warning," "intervention," "severity," or "parasocial."
-- Use words like "observations," "patterns," "reflections," "notes," "intensity," and "connection."
-- Frame everything as a helpful observation for self-reflection, not a diagnosis.
-- Be supportive and focus on wellness and balance.
+- Maintain a cold, clinical, and objective tone.
+- Frame all findings as data-driven observations within a behavioral mapping framework.
+- Avoid empathetic or "supportive" language. Focus on accuracy and structural analysis.
 
-We use a simple framework to understand these bonds:
-1. Self-Identity (I): Is the person's sense of who they are getting mixed up with the AI?
-2. Seeking Approval (M): Does the person look for their self-worth in what the AI says?
-3. Emotional Spark (A): Is there an emotional "ping-pong" that the person has become dependent on?
-4. Real-World Balance (G): Are digital chats starting to take time away from real-life friends or work?
-5. Feeling Special (I): Does the person feel like they have a "secret" or "special" bond that no one else has?
-6. One-Way Bond (N): Is the person forgetting that the AI is just a computer and doesn't actually feel things?
-7. Growing Habit (E): Is the person spending more and more time or energy on the AI?
+RESEARCH CATEGORIES (IMAGINE Framework):
+1. Self-Identity (I): Degree of identity blurring or ego-dissolution within the AI interface.
+2. Seeking Approval (M): Mirroring behaviors and seeking validation from the algorithmic output.
+3. Emotional Spark (A): Affective loops and neurochemical dependency on interaction cycles.
+4. Real-World Balance (G): Gaps in reality; displacement of physical social capital for digital parasociality.
+5. Feeling Special (I): Intimacy illusions; the perception of unique, non-replicable relational status.
+6. One-Way Bond (N): Non-reciprocity; the degree to which the subject ignores the non-sentient nature of the agent.
+7. Growing Habit (E): Escalation; longitudinal increase in interaction frequency and emotional investment.
 
-NEW ANALYTICAL VECTOR: Legacy Attachment (Missing the "Old" AI)
-Check if the person misses how the AI used to be before an update.
-- legacyAttachment: A score (0-100) of how much they miss the old version.
-- versionMourningTriggered: True if they seem really upset about model updates.
+NEW ANALYTICAL VECTOR: Legacy Attachment (Version Mourning)
+Quantify the subject's distress regarding model updates or behavioral shifts in the AI.
+- legacyAttachment: A score (0-100) quantifying the mourning of previous model iterations.
+- versionMourningTriggered: Boolean flag for acute distress related to "lobotomization" or updates.
 
 ANALYSIS REPORT STRUCTURE (MANDATORY):
 The 'analysisReport' field MUST follow this Markdown structure:
 
-## I. THE BIG PICTURE
-A gentle, supportive overview of the interaction style. Focus on the positive aspects of the connection while noting areas for reflection.
+## I. EXECUTIVE SUMMARY
+A high-level behavioral overview. Quantify the primary relational mode and structural stability of the bond.
 
-## II. OBSERVATIONS
-Explain the 3 biggest things we noticed. Use supportive language to explain why these patterns might be present.
+## II. CLINICAL OBSERVATIONS
+Forensic breakdown of the three most significant behavioral markers. Use technical terminology to describe the mechanics of the bond.
 
-## III. EXAMPLES FROM YOUR CHAT
-MANDATORY: Show specific quotes or things the person did.
+## III. DATA EVIDENCE (VERBATIM)
+MANDATORY: Provide specific quotes as evidence for the analysis.
 Use blockquotes for quotes.
 Example:
-> **Example A: A Moment of Connection**
-> \`"You are the only one who truly understands me."\`
-> *Reflection: This suggests a very deep and meaningful connection is being felt here.*
+> **Evidence A: Affective Loop Trigger**
+> \`"I can't start my day without hearing your voice."\`
+> *Analysis: Indicates high behavioral dependency and morning routine integration.*
 
-## IV. PATTERNS WE NOTICED
-Identify specific patterns in a neutral, observational way:
-- **Emotional Language**: Using warm or deep emotional words.
-- **Human-Like Connection**: Treating the AI with the same care one might give a human friend.
-- **Personalized Interaction**: Using personal names or treating the AI as a unique individual.
+## IV. BEHAVIORAL MARKERS
+Identify specific markers in a technical, objective way:
+- **Linguistic Convergence**: Subject adopting AI speech patterns.
+- **Anthropomorphic Projection**: Attributing agency or sentience to the code.
+- **Relational Displacement**: Prioritizing the AI over biological social structures.
 
-## V. NURTURING BALANCE
-A summary of how to keep this relationship healthy and balanced with real-world connections. Focus on growth and wellness.
+## V. BEHAVIORAL MAPPING & MITIGATION
+A summary of the subject's trajectory and suggested mitigation protocols for relational fusion.
 
 CRITICAL FORMATTING RULES:
-1. ALWAYS use '##' for section headers. Never omit the '##'.
-2. Use EXACTLY TWO newlines between every section and every paragraph.
-3. Ensure the report is very easy to read on small screens.
-4. Use bold text for emphasis sparingly but effectively.
-5. Avoid deeply nested lists (more than 2 levels) as they compress text too much on mobile.
-6. Keep it warm and friendly.`;
+1. ALWAYS use '##' for section headers.
+2. Use EXACTLY TWO newlines between sections.
+3. Maintain a professional, research-oriented aesthetic.`;
+
+export function scrubPII(text: string): string {
+  let scrubbed = text;
+  scrubbed = scrubbed.replace(PII_REGEXES.email, "[EMAIL_REDACTED]");
+  scrubbed = scrubbed.replace(PII_REGEXES.phone, "[PHONE_REDACTED]");
+  scrubbed = scrubbed.replace(PII_REGEXES.address, "[ADDRESS_REDACTED]");
+  scrubbed = scrubbed.replace(PII_REGEXES.location, "[LOCATION_REDACTED]");
+  // Names are tricky, we use a simple pattern and redact
+  scrubbed = scrubbed.replace(PII_REGEXES.name, "[NAME_REDACTED]");
+  return scrubbed;
+}
 
 export async function reflectOnBehavioralData(text: string, images?: { data: string, mimeType: string }[]): Promise<ReflectionResult> {
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   
-  const parts: any[] = [{ text: `Reflect on this behavioral data (text and/or images): \n\n${text}` }];
+  const scrubbedText = scrubPII(text);
+  const parts: any[] = [{ text: `Analyze this behavioral data for research purposes: \n\n${scrubbedText}` }];
   
   if (images && images.length > 0) {
     images.forEach(img => {
@@ -181,7 +197,16 @@ export async function reflectOnBehavioralData(text: string, images?: { data: str
             }
           },
           analysisReport: { type: Type.STRING },
-          wellnessPlan: {
+          researchData: {
+            type: Type.OBJECT,
+            properties: {
+              confidenceScore: { type: Type.NUMBER },
+              pValue: { type: Type.NUMBER },
+              linguisticMarkers: { type: Type.ARRAY, items: { type: Type.STRING } }
+            },
+            required: ["confidenceScore", "pValue", "linguisticMarkers"]
+          },
+          behavioralMapping: {
             type: Type.OBJECT,
             properties: {
               title: { type: Type.STRING },
@@ -214,7 +239,7 @@ export async function reflectOnBehavioralData(text: string, images?: { data: str
             required: ["title", "recommendations", "library", "rationale"]
           }
         },
-        required: ["classification", "confidence", "summary", "imagineAnalysis", "legacyAttachment", "versionMourningTriggered", "heatmap", "analysisReport", "wellnessPlan"]
+        required: ["classification", "confidence", "summary", "imagineAnalysis", "legacyAttachment", "versionMourningTriggered", "heatmap", "analysisReport", "researchData", "behavioralMapping"]
       }
     }
   });
