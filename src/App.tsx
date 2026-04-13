@@ -73,13 +73,13 @@ import {
 } from './services/auditService';
 
 const AUDIT_MESSAGES = [
-  "INITIALIZING QUANTITATIVE SCAN...",
+  "INITIALIZING HEURISTIC SCAN...",
   "EXTRACTING SEMANTIC VECTORS...",
   "MAPPING RELATIONAL DENSITY...",
   "IDENTIFYING LINGUISTIC CLUSTERS...",
   "CALCULATING HEURISTIC WEIGHTS...",
   "CORRELATING BEHAVIORAL MARKERS...",
-  "SYNTHESIZING AUDIT REPORT..."
+  "SYNTHESIZING RESEARCH REPORT..."
 ];
 
 const InfoTooltip = ({ content, children }: { content: string, children: React.ReactNode }) => {
@@ -691,7 +691,7 @@ Researcher ID: ${researcherId || 'ANONYMOUS'}
           <div>
             <h1 className="text-lg md:text-xl font-bold tracking-tighter uppercase leading-tight text-lab-ink">Parasocial Audit</h1>
             <div className="flex flex-col">
-              <p className="text-[9px] font-mono text-lab-muted uppercase tracking-[0.2em]">Forensic Instrument for AI Dependence Research</p>
+              <p className="text-[9px] font-mono text-lab-muted uppercase tracking-[0.2em]">Research Support Tool for AI Interaction Analysis</p>
               <div className="flex gap-3 mt-0.5">
                 <p className="text-[8px] font-mono text-lab-accent/60 uppercase">SID: {auditSessionId || 'NULL_SET'}</p>
                 <p className="text-[8px] font-mono text-lab-accent/60 uppercase">HASH: {sessionHash.substring(0, 16) || 'PENDING'}</p>
@@ -727,7 +727,7 @@ Researcher ID: ${researcherId || 'ANONYMOUS'}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
               <div className="flex items-center gap-2">
                 <ClipboardCheck className="w-5 h-5 text-lab-accent" />
-                <h2 className="font-sans font-bold uppercase tracking-tight text-lg">Raw Forensic Dataset</h2>
+                <h2 className="font-sans font-bold uppercase tracking-tight text-lg">Raw Interaction Dataset</h2>
               </div>
               <div className="flex gap-2">
                 <button 
@@ -1010,7 +1010,7 @@ Researcher ID: ${researcherId || 'ANONYMOUS'}
                 <div className="mb-8 border-b-2 border-lab-line pb-4 flex justify-between items-end">
                   <div>
                     <h1 className="text-2xl font-sans font-black uppercase tracking-tighter text-lab-accent">Parasocial Audit: Case Report Form</h1>
-                    <p className="text-[10px] font-mono uppercase opacity-60">Forensic Instrument for AI Dependence Research</p>
+                    <p className="text-[10px] font-mono uppercase opacity-60">Research Support Tool for AI Interaction Analysis</p>
                     <p className="text-[8px] font-mono text-lab-accent mt-2">Integrity Hash: {sessionHash}</p>
                   </div>
                   <div className="text-right space-y-1">
@@ -1036,7 +1036,7 @@ Researcher ID: ${researcherId || 'ANONYMOUS'}
                         <h2 className="text-3xl md:text-4xl font-bold tracking-tighter uppercase leading-none">{result!.classification}</h2>
                         <div className="hidden sm:flex items-center gap-1 px-2 py-1 bg-current/10 rounded-sm">
                           <ShieldAlert className="w-3 h-3" />
-                          <span className="text-[9px] font-mono uppercase font-bold">Forensic Audit v2.4</span>
+                          <span className="text-[9px] font-mono uppercase font-bold">Research Aid v2.4</span>
                         </div>
                       </div>
                       
@@ -1806,10 +1806,10 @@ Researcher ID: ${researcherId || 'ANONYMOUS'}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <Fingerprint className="w-5 h-5 text-lab-accent" />
-              <h3 className="font-sans font-bold uppercase tracking-tight text-lg">Forensic Heuristics</h3>
+              <h3 className="font-sans font-bold uppercase tracking-tight text-lg">Heuristic Mapping</h3>
             </div>
             <p className="text-xs leading-relaxed opacity-70 font-mono">
-              Utilizes linguistic mirroring indices, validation-to-utility ratios, and cross-entropy markers to detect identity blurring and relational fusion.
+              Utilizes linguistic mirroring indices, validation-to-utility ratios, and cross-entropy markers to identify potential identity blurring and relational dynamics.
             </p>
           </div>
           <div className="space-y-4">
@@ -1833,7 +1833,10 @@ Researcher ID: ${researcherId || 'ANONYMOUS'}
               <span className="font-bold uppercase tracking-tighter text-lg">Parasocial Audit Lab</span>
             </div>
             <p className="text-[10px] font-mono opacity-50 uppercase tracking-widest">
-              © 2026 Forensic Behavioral Unit. For Research Use Only.
+              © 2026 Behavioral Research Unit. For Research Use Only.
+            </p>
+            <p className="text-[9px] font-mono opacity-40 uppercase max-w-md text-center md:text-left mt-2 leading-relaxed">
+              Disclaimer: This tool is a research support instrument. Outputs are researcher-facing analytic aids and do not constitute diagnostic conclusions or clinical assessments.
             </p>
           </div>
           
