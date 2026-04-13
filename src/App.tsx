@@ -30,6 +30,7 @@ import {
   Terminal,
   Lock,
   Code,
+  Copy,
   TrendingUp,
   Quote,
   ShieldCheck,
@@ -514,6 +515,22 @@ Researcher ID: ${researcherId || 'ANONYMOUS'}
     document.body.removeChild(link);
   };
 
+  const handleCopyJSON = () => {
+    if (!result) return;
+    const exportData = {
+      sessionId: auditSessionId,
+      subjectId: subjectId || 'N/A',
+      researcherId: researcherId || 'N/A',
+      timestamp: new Date().toISOString(),
+      integrityHash: sessionHash,
+      heuristics: liveHeuristics,
+      analysis: result
+    };
+    navigator.clipboard.writeText(JSON.stringify(exportData, null, 2));
+    // Optional: Add a toast or notification
+    setAuditLog(prev => [...prev, "DATA_COPIED_TO_CLIPBOARD"]);
+  };
+
   const handleExportJSON = () => {
     if (!result) return;
     const exportData = {
@@ -564,7 +581,7 @@ Researcher ID: ${researcherId || 'ANONYMOUS'}
 
       // Add Lab Report Header to PDF (simulated metadata)
       const timestamp = new Date().toISOString();
-      const hash = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      const hash = sessionHash;
       
       pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
       
@@ -573,7 +590,7 @@ Researcher ID: ${researcherId || 'ANONYMOUS'}
       pdf.setTextColor(148, 163, 184); // lab-muted
       pdf.text(`Forensic Integrity Hash: ${hash}`, 20, canvas.height - 40);
       pdf.text(`Exported At: ${timestamp}`, 20, canvas.height - 25);
-      pdf.text(`Platform: Parasocial Audit Lab v1.0.0-Research`, 20, canvas.height - 10);
+      pdf.text(`Platform: Parasocial Audit Lab v1.0.0-AUDIT`, 20, canvas.height - 10);
 
       pdf.save(`forensic_audit_${auditSessionId}.pdf`);
     } catch (err) {
@@ -686,7 +703,7 @@ Researcher ID: ${researcherId || 'ANONYMOUS'}
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 px-3 py-1.5 bg-lab-bg border border-lab-line rounded-sm">
             <Lock className={cn("w-3 h-3", isPrivacyMode ? "text-tool-green" : "text-lab-muted")} />
-            <span className="text-[10px] font-mono uppercase opacity-60">Privacy Mode</span>
+            <span className="text-[10px] font-mono uppercase opacity-60">Redact PII</span>
             <button 
               onClick={() => setIsPrivacyMode(!isPrivacyMode)}
               className={cn(
@@ -1074,6 +1091,13 @@ Researcher ID: ${researcherId || 'ANONYMOUS'}
                         </div>
                         <div className="flex flex-col gap-1">
                           <button 
+                            onClick={handleCopyJSON}
+                            className="flex items-center justify-center gap-2 px-3 py-2 bg-lab-accent text-white text-[9px] font-mono uppercase hover:bg-lab-accent/80 transition-all shadow-md active:scale-95"
+                          >
+                            <Copy className="w-3 h-3" />
+                            COPY
+                          </button>
+                          <button 
                             onClick={handleExportJSONBundle}
                             className="flex items-center justify-center gap-2 px-3 py-2 bg-lab-accent text-white text-[9px] font-mono uppercase hover:bg-lab-accent/80 transition-all shadow-md active:scale-95"
                           >
@@ -1318,23 +1342,65 @@ Researcher ID: ${researcherId || 'ANONYMOUS'}
                   )}
                 </AnimatePresence>
 
-                {/* Heatmap & IMAGINE Radar */}
+                {/* Heatmap & Griffiths Severity Bars */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <section className="bg-lab-surface border border-lab-line p-6 md:col-span-2">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+                      <div className="flex items-center gap-2">
+                        <BarChart3 className="w-4 h-4 text-lab-accent" />
+                        <h3 className="text-sm font-mono uppercase">Griffiths Severity Bars</h3>
+                      </div>
+                      <div className="flex items-center gap-4 text-[10px] font-mono opacity-60">
+                        <div className="flex items-center gap-1">
+                          <div className="w-2 h-2 bg-tool-green" />
+                          <span>STABLE</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="w-2 h-2 bg-casual-blue" />
+                          <span>MODERATE</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="w-2 h-2 bg-simp-red" />
+                          <span>CRITICAL</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="h-64 w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={radarData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                          <XAxis 
+                            dataKey="subject" 
+                            tick={{ fontSize: 9, fontFamily: 'Roboto Mono', fill: '#94a3b8' }}
+                            axisLine={false}
+                            tickLine={false}
+                          />
+                          <YAxis 
+                            domain={[0, 100]} 
+                            tick={{ fontSize: 9, fontFamily: 'Roboto Mono', fill: '#94a3b8' }}
+                            axisLine={false}
+                            tickLine={false}
+                          />
+                          <Tooltip 
+                            contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '4px', fontSize: '10px', fontFamily: 'Roboto Mono' }}
+                            cursor={{ fill: 'rgba(99, 102, 241, 0.05)' }}
+                          />
+                          <Bar dataKey="A" radius={[2, 2, 0, 0]} barSize={40}>
+                            {radarData.map((entry, index) => {
+                              const color = entry.A > 75 ? '#f43f5e' : entry.A > 40 ? '#6366f1' : '#10b981';
+                              return <Cell key={`cell-${index}`} fill={color} />;
+                            })}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </section>
+
                   <section className="bg-lab-surface border border-lab-line p-6 md:col-span-2">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
                       <div className="flex items-center gap-2">
                         <Activity className="w-4 h-4" />
                         <h3 className="text-sm font-mono uppercase">Linguistic Distribution Map</h3>
-                      </div>
-                      <div className="flex items-center gap-4 text-[10px] font-mono opacity-60">
-                        <div className="flex items-center gap-1">
-                          <div className="w-2 h-2 bg-lab-line" />
-                          <span>BALANCED</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <div className="w-2 h-2 bg-lab-accent" />
-                          <span>DEEP CONNECTION</span>
-                        </div>
                       </div>
                     </div>
                     
@@ -1563,6 +1629,19 @@ Researcher ID: ${researcherId || 'ANONYMOUS'}
                       </div>
                     </div>
 
+                    {/* Raw Heuristic Scores for Archival */}
+                    <div className="mt-12 pt-8 border-t-2 border-lab-line">
+                      <h4 className="text-xs font-mono uppercase font-black mb-4 opacity-40 tracking-[0.3em]">Raw Heuristic Scores (Archival)</h4>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+                        {radarData.map((d, i) => (
+                          <div key={i} className="space-y-1">
+                            <p className="text-[8px] font-mono uppercase opacity-50">{d.subject}</p>
+                            <p className="text-sm font-mono font-bold">{d.A.toFixed(1)}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
                     <div className="mt-12 pt-8 border-t border-lab-line flex flex-col md:flex-row justify-between items-end gap-8">
                       <div className="space-y-4">
                         <div className="flex items-center gap-2 opacity-40 grayscale">
@@ -1721,7 +1800,7 @@ Researcher ID: ${researcherId || 'ANONYMOUS'}
               <h3 className="font-sans font-bold uppercase tracking-tight text-lg">Theoretical Framework</h3>
             </div>
             <p className="text-xs leading-relaxed opacity-70 font-mono">
-              Analysis is grounded in the <strong>I-PACE model</strong> and <strong>Griffiths Component Model</strong>, mapping the transition from functional use to pathological dependency.
+              Analysis is grounded in the <strong>I-PACE model</strong> (Brand et al., 2019) and <strong>Griffiths (2005) Component Model</strong>, mapping the transition from functional use to pathological dependency.
             </p>
           </div>
           <div className="space-y-4">

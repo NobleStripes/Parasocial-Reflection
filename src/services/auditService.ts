@@ -141,7 +141,7 @@ DIAGNOSTIC FRAMEWORKS:
    - Escalation (E): Tracks increases in session frequency and intensity (Tolerance).
 
 REPORT STRUCTURE (MANDATORY):
-## I. CLINICAL SUMMARY
+## CLINICAL IMPRESSION
 Forensic overview of the subject's relational state and diagnostic impressions.
 
 ## II. DIAGNOSTIC CRITERIA MATCH
