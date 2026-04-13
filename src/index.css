@@ -5,11 +5,11 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Roboto Mono", ui-monospace, SFMono-Regular, monospace;
 
-  --color-lab-bg: #0f172a;
-  --color-lab-surface: #1e293b;
+  --color-lab-bg: #020617;
+  --color-lab-surface: #0f172a;
   --color-lab-ink: #f8fafc;
-  --color-lab-muted: #94a3b8;
-  --color-lab-line: #334155;
+  --color-lab-muted: #64748b;
+  --color-lab-line: #1e293b;
   --color-lab-accent: #6366f1;
   --color-lab-accent-glow: rgba(99, 102, 241, 0.2);
   

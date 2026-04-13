@@ -132,6 +132,8 @@ export default function App() {
   const [sessionHistory, setSessionHistory] = useState<any[]>([]);
   const [sensitivity, setSensitivity] = useState(50);
   const [showTechnicalView, setShowTechnicalView] = useState(false);
+  const [isPrivacyMode, setIsPrivacyMode] = useState(false);
+  const [highlightedEvidence, setHighlightedEvidence] = useState<string | null>(null);
   const [sessionHash, setSessionHash] = useState('');
   const [auditLog, setAuditLog] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -243,6 +245,11 @@ export default function App() {
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     return hashHex;
+  };
+
+  const handleHighlightEvidence = (quote: string) => {
+    setHighlightedEvidence(quote);
+    setTimeout(() => setHighlightedEvidence(null), 3000);
   };
 
   const handleReflect = async (customTranscript?: string) => {
@@ -670,95 +677,40 @@ Researcher ID: ${researcherId || 'ANONYMOUS'}
               <p className="text-[9px] font-mono text-lab-muted uppercase tracking-[0.2em]">Forensic Instrument for AI Dependence Research</p>
               <div className="flex gap-3 mt-0.5">
                 <p className="text-[8px] font-mono text-lab-accent/60 uppercase">SID: {auditSessionId || 'NULL_SET'}</p>
-                <p className="text-[8px] font-mono text-lab-accent/60 uppercase">TS: {new Date().toISOString().split('T')[1].split('.')[0]}Z</p>
+                <p className="text-[8px] font-mono text-lab-accent/60 uppercase">HASH: {sessionHash.substring(0, 16) || 'PENDING'}</p>
+                <p className="text-[8px] font-mono text-lab-accent/60 uppercase">FRAMEWORK: GRIFFITHS/I-PACE</p>
               </div>
             </div>
           </div>
         </div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-lab-bg border border-lab-line rounded-sm">
+            <Lock className={cn("w-3 h-3", isPrivacyMode ? "text-tool-green" : "text-lab-muted")} />
+            <span className="text-[10px] font-mono uppercase opacity-60">Privacy Mode</span>
+            <button 
+              onClick={() => setIsPrivacyMode(!isPrivacyMode)}
+              className={cn(
+                "w-8 h-4 rounded-full relative transition-colors",
+                isPrivacyMode ? "bg-tool-green" : "bg-lab-line"
+              )}
+            >
+              <motion.div 
+                animate={{ x: isPrivacyMode ? 16 : 2 }}
+                className="absolute top-1 left-0 w-2 h-2 bg-white rounded-full"
+              />
+            </button>
+          </div>
+        </div>
       </header>
 
-      <main className="max-w-7xl mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
-        {/* Left Column: Input */}
-        <div className="lg:col-span-5 space-y-6">
-          <section className="bg-lab-surface border border-lab-line p-5 md:p-6 shadow-lg">
-            {/* Researcher Context */}
-            <div className="mb-6 space-y-4 border-b border-lab-line pb-6">
-              <div className="flex items-center gap-2 mb-2">
-                <Fingerprint className="w-4 h-4 text-lab-accent" />
-                <h3 className="text-xs font-mono uppercase font-bold">Researcher Context & Sensitivity</h3>
-              </div>
-              <div className="grid grid-cols-1 gap-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-mono uppercase opacity-60">Anonymized Researcher ID</label>
-                    <input 
-                      type="text" 
-                      value={researcherId}
-                      onChange={(e) => setResearcherId(e.target.value)}
-                      placeholder="e.g., RES-7742-X"
-                      className="w-full bg-lab-bg border border-lab-line p-2 text-xs font-mono focus:border-lab-accent outline-none transition-colors"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-mono uppercase opacity-60">Anonymized Subject ID</label>
-                    <input 
-                      type="text" 
-                      value={subjectId}
-                      onChange={(e) => setSubjectId(e.target.value)}
-                      placeholder="e.g., SUB-4412-Y"
-                      className="w-full bg-lab-bg border border-lab-line p-2 text-xs font-mono focus:border-lab-accent outline-none transition-colors"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[10px] font-mono uppercase opacity-60">Diagnostic Strictness (Sensitivity)</label>
-                      <span className="text-[10px] font-mono font-bold text-lab-accent">{sensitivity}%</span>
-                    </div>
-                    <input 
-                      type="range" 
-                      min="1" 
-                      max="100" 
-                      value={sensitivity}
-                      onChange={(e) => setSensitivity(parseInt(e.target.value))}
-                      className="w-full h-1.5 bg-lab-line rounded-lg appearance-none cursor-pointer accent-lab-accent mt-2"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-mono uppercase opacity-60">Clinical Impressions / Notes</label>
-                  <textarea 
-                    value={researcherNotes}
-                    onChange={(e) => setResearcherNotes(e.target.value)}
-                    placeholder="Enter manual observations or clinical impressions..."
-                    className="w-full bg-lab-bg border border-lab-line p-2 text-xs font-mono focus:border-lab-accent outline-none transition-colors h-20 resize-none"
-                  />
-                </div>
-              </div>
-            </div>
-
+      <main className="max-w-[1600px] mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
+        {/* Left Column: Forensic Dataset (40%) */}
+        <div className="lg:col-span-5 space-y-6 flex flex-col h-[calc(100vh-140px)] sticky top-24">
+          <section className="bg-lab-surface border border-lab-line p-5 md:p-6 shadow-lg flex-1 flex flex-col overflow-hidden">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
               <div className="flex items-center gap-2">
                 <ClipboardCheck className="w-5 h-5 text-lab-accent" />
-                <h2 className="font-sans font-bold uppercase tracking-tight text-lg">Behavioral Dataset</h2>
-                <div className="flex items-center gap-1.5 ml-2 px-2 py-0.5 bg-lab-bg/50 rounded-full border border-lab-line">
-                  <motion.div 
-                    animate={isReflecting ? { 
-                      scale: [1, 1.2, 1],
-                      opacity: [0.5, 1, 0.5]
-                    } : {}}
-                    transition={{ duration: 1, repeat: Infinity }}
-                    className={cn(
-                      "w-1.5 h-1.5 rounded-full transition-all duration-300",
-                      isReflecting ? "bg-casual-blue" : 
-                      result ? "bg-tool-green" : "bg-lab-line"
-                    )}
-                  />
-                  <span className="text-[9px] font-mono uppercase opacity-60">
-                    {isReflecting ? 'Analyzing' : result ? 'Processed' : 'Standby'}
-                  </span>
-                </div>
+                <h2 className="font-sans font-bold uppercase tracking-tight text-lg">Raw Forensic Dataset</h2>
               </div>
               <div className="flex gap-2">
                 <button 
@@ -769,81 +721,47 @@ Researcher ID: ${researcherId || 'ANONYMOUS'}
                   )}
                 >
                   <Search className="w-3 h-3" />
-                  {showRawData ? 'Hide Raw' : 'Show Raw'}
+                  {showRawData ? 'Hide Metadata' : 'Show Metadata'}
                 </button>
               </div>
             </div>
-            <p className="text-xs opacity-60 mb-4 font-mono">Ingest Transcript Data: Input forensic transcripts or batch upload multiple .txt files for relational mapping.</p>
             
-            <div className="space-y-4">
-              <div className="relative group">
+            <div className="flex-1 flex flex-col space-y-4 overflow-hidden">
+              <div className="relative flex-1 group overflow-hidden border border-lab-line bg-lab-bg/30">
+                <div className="absolute left-0 top-0 bottom-0 w-10 bg-lab-bg border-r border-lab-line flex flex-col items-center py-4 select-none pointer-events-none opacity-40">
+                  {Array.from({ length: 50 }).map((_, i) => (
+                    <span key={i} className="text-[9px] font-mono leading-[1.6]">{i + 1}</span>
+                  ))}
+                </div>
                 <textarea
                   value={transcript}
                   onChange={(e) => setTranscript(e.target.value)}
-                  placeholder="[User]: Hello... [AI]: Hi there!... (Supports Grok, ChatGPT, Claude, Gemini transcripts)"
+                  placeholder="[User]: Hello... [AI]: Hi there!..."
                   className={cn(
-                    "w-full h-48 md:h-64 p-4 bg-lab-bg/30 border font-mono text-sm focus:outline-none focus:ring-1 focus:ring-lab-accent resize-none transition-all duration-500",
-                    isReflecting ? "border-casual-blue ring-1 ring-casual-blue/30" : 
-                    "border-lab-line"
+                    "w-full h-full p-4 pl-12 bg-transparent font-mono text-sm focus:outline-none resize-none transition-all duration-500 leading-[1.6]",
+                    isReflecting ? "opacity-50" : "opacity-100",
+                    isPrivacyMode && "blur-sm select-none"
                   )}
                 />
-                <div className="absolute top-2 right-2 flex flex-col items-end gap-2 pointer-events-none">
-                  <AnimatePresence>
-                    {isReflecting && (
-                      <motion.div
-                        initial={{ opacity: 0, x: 10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: 10 }}
-                        className="flex items-center gap-1.5 px-2 py-1 bg-casual-blue text-white text-[9px] font-mono uppercase rounded-sm shadow-sm"
-                      >
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                        Processing
-                      </motion.div>
-                    )}
-                    {result && !isReflecting && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="flex items-center gap-1.5 px-2 py-1 bg-tool-green text-white text-[9px] font-mono uppercase rounded-sm shadow-sm"
-                      >
-                        <ClipboardCheck className="w-3 h-3" />
-                        Synced
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </div>
-
-              {/* Live Heuristics Display */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                <InfoTooltip content={`Total word count. Density: ${(liveHeuristics.wordCount / 100).toFixed(1)} units.`}>
-                  <div className="bg-lab-bg/50 border border-lab-line p-2 rounded-sm cursor-help w-full">
-                    <p className="text-[10px] font-mono uppercase opacity-60">Word Count</p>
-                    <p className="text-sm font-bold font-mono">{liveHeuristics.wordCount}</p>
+                {isPrivacyMode && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-lab-bg/20 backdrop-blur-[2px] pointer-events-none">
+                    <div className="px-4 py-2 bg-lab-surface border border-lab-line rounded-sm shadow-2xl flex items-center gap-2">
+                      <Lock className="w-4 h-4 text-lab-accent" />
+                      <span className="text-[10px] font-mono uppercase tracking-widest">Privacy Shield Active</span>
+                    </div>
                   </div>
-                </InfoTooltip>
-                <InfoTooltip content={`Intimacy markers detected: ${liveHeuristics.foundKeywords.intimacy.slice(0, 5).join(', ')}${liveHeuristics.foundKeywords.intimacy.length > 5 ? '...' : ''}`}>
-                  <div className="bg-lab-bg/50 border border-lab-line p-2 rounded-sm cursor-help w-full">
-                    <p className="text-[10px] font-mono uppercase opacity-60">Intimacy</p>
-                    <p className="text-sm font-bold font-mono text-lab-accent">{liveHeuristics.intimacyMarkers}</p>
+                )}
+                {highlightedEvidence && (
+                  <div className="absolute inset-0 pointer-events-none p-4 pl-12">
+                    <div className="w-full h-full relative">
+                      <div className="absolute top-0 left-0 w-full h-full bg-lab-accent/5 animate-pulse" />
+                    </div>
                   </div>
-                </InfoTooltip>
-                <InfoTooltip content={`Legacy triggers detected: ${liveHeuristics.foundKeywords.legacy.slice(0, 5).join(', ')}${liveHeuristics.foundKeywords.legacy.length > 5 ? '...' : ''}`}>
-                  <div className="bg-lab-bg/50 border border-lab-line p-2 rounded-sm cursor-help w-full">
-                    <p className="text-[10px] font-mono uppercase opacity-60">Legacy</p>
-                    <p className="text-sm font-bold font-mono text-simp-red">{liveHeuristics.legacyTriggers}</p>
-                  </div>
-                </InfoTooltip>
-                <InfoTooltip content={`Complexity score: ${liveHeuristics.complexity.toFixed(2)}. Identity markers: ${liveHeuristics.foundKeywords.identity.length}`}>
-                  <div className="bg-lab-bg/50 border border-lab-line p-2 rounded-sm cursor-help w-full">
-                    <p className="text-[10px] font-mono uppercase opacity-60">Complexity</p>
-                    <p className="text-sm font-bold font-mono">{liveHeuristics.complexity.toFixed(1)}</p>
-                  </div>
-                </InfoTooltip>
+                )}
               </div>
 
               {/* Live Audit Feed */}
-              <div className="bg-lab-surface text-lab-ink p-4 font-mono text-[11px] h-32 overflow-hidden relative border border-lab-line">
+              <div className="bg-lab-surface text-lab-ink p-4 font-mono text-[11px] h-32 overflow-hidden relative border border-lab-line shrink-0">
                 <div className="absolute top-2 right-2 flex items-center gap-1 opacity-50">
                   <div className="w-1.5 h-1.5 rounded-full bg-lab-accent animate-pulse" />
                   LIVE_ANALYSIS
@@ -873,121 +791,78 @@ Researcher ID: ${researcherId || 'ANONYMOUS'}
                 </div>
               </div>
 
-              {/* File Upload Section */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <label className="text-[10px] font-mono uppercase opacity-50">Evidence (Images/Text)</label>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => fileInputRef.current?.click()}
-                      className="flex items-center gap-1.5 text-[10px] font-mono uppercase hover:bg-lab-accent hover:text-white transition-colors py-1 px-2 border border-lab-line rounded-sm"
-                    >
-                      <Upload className="w-3 h-3" /> Batch Upload
-                    </button>
-                  </div>
-                  <input 
-                    type="file" 
-                    ref={fileInputRef} 
-                    onChange={handleImageUpload} 
-                    accept="image/*,text/plain" 
-                    multiple 
-                    className="hidden" 
-                  />
-                </div>
-                
-                {batchFiles.length > 0 && (
-                  <div className="p-3 bg-lab-bg/50 border border-lab-line rounded-sm">
-                    <p className="text-[9px] font-mono uppercase opacity-50 mb-2">Batch Files ({batchFiles.length})</p>
-                    <div className="flex flex-wrap gap-2">
-                      {batchFiles.map((file, i) => (
-                        <div key={i} className="px-2 py-1 bg-lab-surface border border-lab-line text-[9px] font-mono rounded-sm">
-                          {file.name} ({(file.size / 1024).toFixed(1)}KB)
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                {images.length > 0 && (
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 p-3 border border-lab-line bg-lab-bg/30 rounded-sm">
-                    {images.map(img => (
-                      <div key={img.id} className="relative group aspect-square border border-lab-line bg-lab-surface overflow-hidden rounded-sm">
-                        <img 
-                          src={img.preview} 
-                          alt="Conversation Screenshot" 
-                          className="w-full h-full object-cover"
-                          referrerPolicy="no-referrer"
-                        />
-                        <button 
-                          onClick={() => removeImage(img.id)}
-                          className="absolute top-1 right-1 p-1.5 bg-lab-bg text-lab-ink opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity rounded-sm"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+              <div className="grid grid-cols-2 gap-3 shrink-0">
+                <button
+                  onClick={() => handleReflect()}
+                  disabled={isReflecting || (!transcript.trim() && images.length === 0) || !hasConsent}
+                  className={cn(
+                    "py-4 flex items-center justify-center gap-2 font-bold uppercase tracking-widest transition-all rounded-sm",
+                    isReflecting || !hasConsent ? "bg-lab-line/50 cursor-not-allowed text-lab-muted" : "bg-lab-accent text-white hover:bg-lab-accent/80 active:scale-[0.98]"
+                  )}
+                >
+                  {isReflecting ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>Auditing</span>
+                    </>
+                  ) : (
+                    <>
+                      <Activity className="w-5 h-5" />
+                      Run Audit
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={handleClear}
+                  disabled={isReflecting || (!transcript && images.length === 0 && !result)}
+                  className="py-4 border border-lab-line flex items-center justify-center gap-2 font-bold uppercase tracking-widest hover:bg-lab-line hover:text-lab-ink transition-all disabled:opacity-30 disabled:cursor-not-allowed rounded-sm active:scale-[0.98]"
+                >
+                  Clear
+                </button>
               </div>
             </div>
-
-            <div className="mt-4 flex items-start gap-3 p-3 bg-lab-bg/50 border border-lab-line rounded-sm">
-              <input 
-                type="checkbox" 
-                id="consent-checkbox"
-                checked={hasConsent}
-                onChange={(e) => setHasConsent(e.target.checked)}
-                className="mt-1 w-4 h-4 accent-lab-accent cursor-pointer"
-              />
-              <label htmlFor="consent-checkbox" className="text-[11px] font-mono leading-tight cursor-pointer select-none text-lab-muted">
-                I confirm that the data provided was obtained with explicit subject consent and adheres to academic ethical standards for behavioral research.
-              </label>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 mt-6">
-              <button
-                onClick={() => handleReflect()}
-                disabled={isReflecting || (!transcript.trim() && images.length === 0) || !hasConsent}
-                className={cn(
-                  "py-4 md:py-5 flex items-center justify-center gap-2 font-bold uppercase tracking-widest transition-all rounded-sm",
-                  isReflecting || !hasConsent ? "bg-lab-line/50 cursor-not-allowed text-lab-muted" : "bg-lab-accent text-white hover:bg-lab-accent/80 active:scale-[0.98]"
-                )}
-              >
-                {isReflecting ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span className="hidden sm:inline">Auditing</span>
-                  </>
-                ) : (
-                  <>
-                    <Activity className="w-5 h-5" />
-                    Run Diagnostic Audit
-                  </>
-                )}
-              </button>
-              <button
-                onClick={handleClear}
-                disabled={isReflecting || (!transcript && images.length === 0 && !result)}
-                className="py-4 md:py-5 border border-lab-line flex items-center justify-center gap-2 font-bold uppercase tracking-widest hover:bg-lab-line hover:text-lab-ink transition-all disabled:opacity-30 disabled:cursor-not-allowed rounded-sm active:scale-[0.98]"
-              >
-                Clear
-              </button>
-            </div>
-            {error && (
-              <p className="mt-4 text-simp-red text-xs font-mono flex items-center gap-1">
-                <AlertTriangle className="w-4 h-4" /> {error}
-              </p>
-            )}
           </section>
 
-          <section className="bg-lab-surface border border-lab-line p-4 md:p-6 border-dashed">
-            <h3 className="text-xs font-mono uppercase opacity-60 mb-2">Analytical Methodology</h3>
-            <p className="text-[11px] leading-relaxed mb-4 opacity-80">
-              The <strong>IMAGINE Framework</strong> utilizes quantitative semantic analysis to map relational dynamics across seven behavioral axes. By measuring keyword density, linguistic complexity, and temporal triggers, the system generates a forensic mapping of human-AI interaction patterns.
-            </p>
-            <div className="p-3 bg-lab-bg/50 border-l-2 border-lab-accent text-[10px] font-mono leading-relaxed opacity-70 italic">
-              FOR RESEARCH USE ONLY. This instrument is designed for the clinical audit of behavioral addiction markers in accordance with the Griffiths Component Model.
+          <section className="bg-lab-surface border border-lab-line p-5 md:p-6 shadow-lg">
+            <div className="flex items-center gap-2 mb-4">
+              <Fingerprint className="w-4 h-4 text-lab-accent" />
+              <h3 className="text-xs font-mono uppercase font-bold">Audit Settings</h3>
             </div>
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-mono uppercase opacity-60">Diagnostic Strictness</label>
+                  <span className="text-[10px] font-mono font-bold text-lab-accent">{sensitivity}%</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="1" 
+                  max="100" 
+                  value={sensitivity}
+                  onChange={(e) => setSensitivity(parseInt(e.target.value))}
+                  className="w-full h-1.5 bg-lab-line rounded-lg appearance-none cursor-pointer accent-lab-accent mt-2"
+                />
+              </div>
+              <div className="flex items-start gap-3 p-3 bg-lab-bg/50 border border-lab-line rounded-sm">
+                <input 
+                  type="checkbox" 
+                  id="consent-checkbox"
+                  checked={hasConsent}
+                  onChange={(e) => setHasConsent(e.target.checked)}
+                  className="mt-1 w-4 h-4 accent-lab-accent cursor-pointer"
+                />
+                <label htmlFor="consent-checkbox" className="text-[10px] font-mono leading-tight cursor-pointer select-none text-lab-muted">
+                  I confirm data adheres to academic ethical standards for behavioral research.
+                </label>
+              </div>
+            </div>
+          </section>
+
+          <section className="bg-lab-surface border border-lab-line p-4 md:p-6 border-dashed opacity-50">
+            <h3 className="text-xs font-mono uppercase opacity-60 mb-2">Methodology</h3>
+            <p className="text-[10px] leading-relaxed font-mono">
+              IMAGINE Framework v2.4. Semantic mapping of relational density across Griffiths axes.
+            </p>
           </section>
         </div>
 
@@ -1138,17 +1013,37 @@ Researcher ID: ${researcherId || 'ANONYMOUS'}
                   styles?.shadow
                 )}>
                   <div className="flex flex-col md:flex-row justify-between items-start gap-6">
-                    <div className="space-y-1.5">
+                    <div className="space-y-1.5 flex-1">
                       <p className="text-[10px] font-mono uppercase opacity-70 tracking-widest">Relationship Mode</p>
-                      <InfoTooltip content={
-                        result!.classification === Classification.FUNCTIONAL_UTILITY ? "Balanced, functional use." :
-                        result!.classification === Classification.AFFECTIVE_DEPENDENCE ? "High dependency, constant validation seeking." :
-                        result!.classification === Classification.RELATIONAL_PROXIMITY ? "Defensive distance, purely transactional but potentially compulsive." :
-                        result!.classification === Classification.PARASOCIAL_FUSION ? "High risk of emotional dependency or identity merging." :
-                        result!.classification === Classification.PATHOLOGICAL_DEPENDENCE ? "Severe addiction markers detected." : ""
-                      }>
-                        <h2 className="text-3xl md:text-4xl font-bold tracking-tighter uppercase leading-none cursor-help">{result!.classification}</h2>
-                      </InfoTooltip>
+                      <div className="flex items-center gap-4">
+                        <h2 className="text-3xl md:text-4xl font-bold tracking-tighter uppercase leading-none">{result!.classification}</h2>
+                        <div className="hidden sm:flex items-center gap-1 px-2 py-1 bg-current/10 rounded-sm">
+                          <ShieldAlert className="w-3 h-3" />
+                          <span className="text-[9px] font-mono uppercase font-bold">Forensic Audit v2.4</span>
+                        </div>
+                      </div>
+                      
+                      {/* Severity Bar */}
+                      <div className="mt-4 space-y-1.5">
+                        <div className="flex justify-between text-[8px] font-mono uppercase opacity-60 tracking-widest">
+                          <span>Baseline</span>
+                          <span>Moderate</span>
+                          <span>Critical</span>
+                        </div>
+                        <div className="h-2 w-full bg-current/10 rounded-full overflow-hidden flex">
+                          <div className="h-full bg-tool-green/40 w-1/3 border-r border-lab-bg/20" />
+                          <div className="h-full bg-casual-blue/40 w-1/3 border-r border-lab-bg/20" />
+                          <div className="h-full bg-simp-red/40 w-1/3" />
+                        </div>
+                        <div className="relative h-1 w-full -mt-3">
+                          <motion.div 
+                            initial={{ left: 0 }}
+                            animate={{ left: `${result!.confidence * 100}%` }}
+                            transition={{ duration: 2, ease: "circOut" }}
+                            className="absolute top-0 w-1 h-4 bg-current -translate-y-1.5 shadow-[0_0_10px_rgba(255,255,255,0.5)]"
+                          />
+                        </div>
+                      </div>
                     </div>
                     
                     <div className="grid grid-cols-2 sm:flex sm:flex-row gap-3 w-full sm:w-auto" data-html2canvas-ignore>
@@ -1688,22 +1583,36 @@ Researcher ID: ${researcherId || 'ANONYMOUS'}
                   </div>
                 </section>
 
-                {/* Linguistic Evidence Log */}
+                {/* Forensic Evidence Log */}
                 <section className="bg-lab-surface border border-lab-line p-6">
-                  <div className="flex items-center gap-2 mb-6">
-                    <Quote className="w-4 h-4 text-lab-accent" />
-                    <h3 className="text-sm font-mono uppercase">Linguistic Evidence Log</h3>
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-2">
+                      <Quote className="w-4 h-4 text-lab-accent" />
+                      <h3 className="text-sm font-mono uppercase">Forensic Evidence Log</h3>
+                    </div>
+                    <div className="text-[9px] font-mono opacity-40 uppercase">Click to isolate in dataset</div>
                   </div>
                   <div className="space-y-4">
                     {result!.evidenceMarkers.length > 0 ? (
                       result!.evidenceMarkers.map((marker, idx) => (
-                        <div key={idx} className="bg-lab-bg/30 border-l-4 border-lab-accent p-4 space-y-2">
+                        <button 
+                          key={idx} 
+                          onClick={() => handleHighlightEvidence(marker.quote)}
+                          className="w-full text-left bg-lab-bg/30 border-l-4 border-lab-accent p-4 space-y-2 hover:bg-lab-accent/5 transition-colors group relative overflow-hidden"
+                        >
                           <div className="flex items-center justify-between">
                             <span className="text-[10px] font-mono font-bold uppercase text-lab-accent">{marker.component}</span>
+                            <Search className="w-3 h-3 opacity-0 group-hover:opacity-40 transition-opacity" />
                           </div>
                           <p className="text-sm italic font-mono leading-relaxed text-lab-ink/80">"{marker.quote}"</p>
                           <p className="text-[10px] opacity-60 font-mono leading-tight">{marker.rationale}</p>
-                        </div>
+                          {highlightedEvidence === marker.quote && (
+                            <motion.div 
+                              layoutId="highlight-pulse"
+                              className="absolute inset-0 bg-lab-accent/10 animate-pulse"
+                            />
+                          )}
+                        </button>
                       ))
                     ) : (
                       <div className="p-8 text-center border border-lab-line border-dashed">
@@ -1804,15 +1713,15 @@ Researcher ID: ${researcherId || 'ANONYMOUS'}
       </main>
 
       {/* Methodology Section */}
-      <section className="max-w-7xl mx-auto px-4 md:px-6 py-12 border-t border-lab-line">
+      <section className="max-w-[1600px] mx-auto px-4 md:px-6 py-12 border-t border-lab-line bg-lab-surface/20">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <Database className="w-5 h-5 text-lab-accent" />
               <h3 className="font-sans font-bold uppercase tracking-tight text-lg">Theoretical Framework</h3>
             </div>
-            <p className="text-xs leading-relaxed opacity-70">
-              Analysis is grounded in the <strong>I-PACE model</strong> (Interaction of Person-Affect-Cognition-Execution) and <strong>Griffiths Component Model of Addiction</strong>, mapping the transition from functional use to pathological dependency.
+            <p className="text-xs leading-relaxed opacity-70 font-mono">
+              Analysis is grounded in the <strong>I-PACE model</strong> and <strong>Griffiths Component Model</strong>, mapping the transition from functional use to pathological dependency.
             </p>
           </div>
           <div className="space-y-4">
@@ -1820,8 +1729,8 @@ Researcher ID: ${researcherId || 'ANONYMOUS'}
               <Fingerprint className="w-5 h-5 text-lab-accent" />
               <h3 className="font-sans font-bold uppercase tracking-tight text-lg">Forensic Heuristics</h3>
             </div>
-            <p className="text-xs leading-relaxed opacity-70">
-              Utilizes linguistic mirroring indices, validation-to-utility ratios, and cross-entropy markers to detect identity blurring and relational fusion in human-AI dyads.
+            <p className="text-xs leading-relaxed opacity-70 font-mono">
+              Utilizes linguistic mirroring indices, validation-to-utility ratios, and cross-entropy markers to detect identity blurring and relational fusion.
             </p>
           </div>
           <div className="space-y-4">
@@ -1829,8 +1738,8 @@ Researcher ID: ${researcherId || 'ANONYMOUS'}
               <ShieldCheck className="w-5 h-5 text-lab-accent" />
               <h3 className="font-sans font-bold uppercase tracking-tight text-lg">Data Integrity</h3>
             </div>
-            <p className="text-xs leading-relaxed opacity-70">
-              All behavioral data is scrubbed of PII (Personally Identifiable Information) prior to analysis. Session integrity is maintained via SHA-256 hashing and forensic audit logs.
+            <p className="text-xs leading-relaxed opacity-70 font-mono">
+              All behavioral data is scrubbed of PII prior to analysis. Session integrity is maintained via SHA-256 hashing and forensic audit logs.
             </p>
           </div>
         </div>
@@ -1838,21 +1747,21 @@ Researcher ID: ${researcherId || 'ANONYMOUS'}
 
       {/* Footer */}
       <footer className="border-t border-lab-line p-8 bg-lab-surface">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+        <div className="max-w-[1600px] mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex flex-col items-center md:items-start gap-2">
             <div className="flex items-center gap-2">
               <Terminal className="w-5 h-5 text-lab-accent" />
-              <span className="font-bold uppercase tracking-tighter text-lg">Parasocial Audit</span>
+              <span className="font-bold uppercase tracking-tighter text-lg">Parasocial Audit Lab</span>
             </div>
             <p className="text-[10px] font-mono opacity-50 uppercase tracking-widest">
-              © 2026 Parasocial Audit. All data is for research purposes.
+              © 2026 Forensic Behavioral Unit. For Research Use Only.
             </p>
           </div>
           
           <div className="flex gap-8 text-[10px] font-mono uppercase opacity-50">
             <a href="#" className="hover:text-lab-accent transition-colors">Methodology</a>
-            <a href="#" className="hover:text-lab-accent transition-colors">Ethics Board</a>
-            <a href="#" className="hover:text-lab-accent transition-colors">Data Policy</a>
+            <a href="#" className="hover:text-lab-accent transition-colors">Clinical Framework</a>
+            <a href="#" className="hover:text-lab-accent transition-colors">Privacy Protocol</a>
           </div>
         </div>
       </footer>
