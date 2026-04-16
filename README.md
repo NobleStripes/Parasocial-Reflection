@@ -14,7 +14,7 @@ These values are calculated algorithmically from the raw source text before any 
 *   **Linguistic Complexity**: Average word length and syntactic density.
 
 ### 2. Heuristic Inferred Metrics (Model Interpretation)
-These values are produced by the **Google Gemini 3.1 Pro** analysis engine, interpreting the transcript in context:
+These values are produced by the **Anthropic Claude Opus 4.6** analysis engine, interpreting the transcript in context:
 *   **Griffiths Six Mapping**: Heuristic scoring of Salience, Mood Modification, Tolerance, Withdrawal, Conflict, and Relapse.
 *   **IMAGINE Framework**: Qualitative vectors for Identity, Mirroring, Affective Loop, Reality Gaps, Intimacy Illusion, Non-Reciprocity, and Escalation.
 *   **Relational Classification**: Heuristic categorization of the interaction mode (e.g., Functional Utility vs. Parasocial Fusion).
@@ -34,7 +34,7 @@ These values are produced by the **Google Gemini 3.1 Pro** analysis engine, inte
 *   **Multi-Format Export**: PDF (Case Report Form), CSV (Statistical Analysis), and JSON (Data Interchange).
 
 ## 🛠 Technical Stack
-*   **Analysis Engine**: Google Gemini 3.1 Pro.
+*   **Analysis Engine**: Anthropic Claude Opus 4.6 (server-side, API key never exposed to the browser).
 *   **Visualization**: Recharts & Framer Motion.
 *   **Data Security**: SHA-256 Hashing & Local PII Scrubbing.
 
