@@ -1,4 +1,6 @@
 import Database from "better-sqlite3";
+import { getPrivacyConfig, hashResearcherId, sanitizeNotes } from "./privacy";
+import { scrubPIIText } from "../shared/piiScrubber";
 
 export interface SessionRecord {
   id: number;
@@ -34,23 +36,46 @@ export class SessionRepository {
   }
 
   create(input: NewSessionInput): { id: number; delta: number } {
+    const privacy = getPrivacyConfig();
+    const persistedResearcherId = privacy.hashResearcherId ? hashResearcherId(input.researcherId) : input.researcherId;
+    const sanitizedNotes = sanitizeNotes(input.notes || "", privacy.maxNotesChars);
+    const persistedNotes = privacy.piiScrubberEnabled
+      ? scrubPIIText(sanitizedNotes, false).redactedText
+      : sanitizedNotes;
+
+    const persistedData = privacy.storeRawData
+      ? input.data
+      : {
+          classification: (input.data as any)?.classification,
+          confidence: (input.data as any)?.confidence,
+          researchData: (input.data as any)?.researchData,
+          clinicalData: {
+            diagnosticMarkers: (input.data as any)?.clinicalData?.diagnosticMarkers,
+            griffithsScores: (input.data as any)?.clinicalData?.griffithsScores,
+          },
+          provenance: (input.data as any)?.provenance,
+        };
+
     const previous = this.db
       .prepare("SELECT dependencyScore FROM sessions WHERE researcherId = ? ORDER BY timestamp DESC LIMIT 1")
-      .get(input.researcherId) as { dependencyScore: number } | undefined;
+      .get(persistedResearcherId) as { dependencyScore: number } | undefined;
 
     const delta = previous ? input.dependencyScore - previous.dependencyScore : 0;
 
     const result = this.db
       .prepare("INSERT INTO sessions (researcherId, dependencyScore, data, notes) VALUES (?, ?, ?, ?)")
-      .run(input.researcherId, input.dependencyScore, JSON.stringify(input.data), input.notes || "");
+      .run(persistedResearcherId, input.dependencyScore, JSON.stringify(persistedData), persistedNotes);
 
     return { id: Number(result.lastInsertRowid), delta };
   }
 
   listByResearcher(researcherId: string): SessionRecord[] {
+    const privacy = getPrivacyConfig();
+    const persistedResearcherId = privacy.hashResearcherId ? hashResearcherId(researcherId) : researcherId;
+
     const rows = this.db
       .prepare("SELECT * FROM sessions WHERE researcherId = ? ORDER BY timestamp DESC")
-      .all(researcherId) as Array<{
+      .all(persistedResearcherId) as Array<{
         id: number;
         researcherId: string;
         timestamp: string;

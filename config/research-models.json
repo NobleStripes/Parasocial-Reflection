@@ -1,0 +1,84 @@
+{
+  "schemaVersion": "1",
+  "models": [
+    {
+      "id": "psychiatric-evidence-v1",
+      "name": "Psychiatric Evidence Baseline v1",
+      "references": [
+        {
+          "id": "griffiths-2005",
+          "citation": "Griffiths, M. (2005). A components model of addiction within a biopsychosocial framework.",
+          "focus": "Salience, mood modification, tolerance, withdrawal, conflict, relapse"
+        },
+        {
+          "id": "brand-2019",
+          "citation": "Brand, M., et al. (2019). The Interaction of Person-Affect-Cognition-Execution (I-PACE) model for addictive behaviors.",
+          "focus": "Inhibitory control, cognitive-affective reinforcement loops"
+        },
+        {
+          "id": "kaplan-2022",
+          "citation": "Kaplan, A. D., et al. (2022). Human attachment framing in conversational AI interactions (review evidence).",
+          "focus": "Attachment projection, anthropomorphism, relational framing"
+        }
+      ],
+      "weights": {
+        "salienceDependencyWeight": 18,
+        "salienceTurnWeight": 2,
+        "moodDependencyWeight": 12,
+        "moodGriefWeight": 8,
+        "toleranceWordDivisor": 14,
+        "toleranceTurnWeight": 3,
+        "toleranceImageWeight": 5,
+        "withdrawalGriefWeight": 22,
+        "withdrawalIdentityWeight": 7,
+        "conflictDependencyWeight": 10,
+        "conflictIdentityWeight": 14,
+        "conflictComplaintPenalty": 4,
+        "relapseGriefWeight": 15,
+        "relapseDependencyWeight": 9,
+        "confidenceBase": 46,
+        "confidenceLinguisticWeight": 5,
+        "confidenceWordDivisor": 20,
+        "confidenceWordCap": 18,
+        "confidenceImageWeight": 3
+      }
+    },
+    {
+      "id": "psychiatric-evidence-v1-strict",
+      "name": "Psychiatric Evidence Baseline v1 (Strict)",
+      "references": [
+        {
+          "id": "griffiths-2005",
+          "citation": "Griffiths, M. (2005). A components model of addiction within a biopsychosocial framework.",
+          "focus": "Salience, mood modification, tolerance, withdrawal, conflict, relapse"
+        },
+        {
+          "id": "brand-2019",
+          "citation": "Brand, M., et al. (2019). The Interaction of Person-Affect-Cognition-Execution (I-PACE) model for addictive behaviors.",
+          "focus": "Inhibitory control, cognitive-affective reinforcement loops"
+        }
+      ],
+      "weights": {
+        "salienceDependencyWeight": 19,
+        "salienceTurnWeight": 2,
+        "moodDependencyWeight": 12,
+        "moodGriefWeight": 8,
+        "toleranceWordDivisor": 15,
+        "toleranceTurnWeight": 3,
+        "toleranceImageWeight": 5,
+        "withdrawalGriefWeight": 23,
+        "withdrawalIdentityWeight": 7,
+        "conflictDependencyWeight": 11,
+        "conflictIdentityWeight": 14,
+        "conflictComplaintPenalty": 5,
+        "relapseGriefWeight": 16,
+        "relapseDependencyWeight": 10,
+        "confidenceBase": 44,
+        "confidenceLinguisticWeight": 4,
+        "confidenceWordDivisor": 22,
+        "confidenceWordCap": 16,
+        "confidenceImageWeight": 3
+      }
+    }
+  ]
+}

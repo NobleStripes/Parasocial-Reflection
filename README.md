@@ -2,6 +2,12 @@
 
 Parasocial Audit v2 is a full rewrite of the original codebase focused on cleaner architecture, provider-pluggable analysis, and a new study workspace UI.
 
+## Audience Restriction
+
+This application is intended only for psychology researchers and qualified behavioral-health research teams.
+It must not be used by untrained users, for self-diagnosis, or as a clinical decision system.
+It is not authorized for direct consumer mental-health use.
+
 ## What Changed
 
 - Modular backend with app factory, session repository, and provider registry.
@@ -14,6 +20,7 @@ Parasocial Audit v2 is a full rewrite of the original codebase focused on cleane
 - Split UI into feature-level hook and panel components for maintainability.
 - Added threshold profile system (default, conservative, sensitive) with profile-aware provenance.
 - Added calibration mode for side-by-side scoring across selected profiles.
+- Added psychiatric-research evidence model that now contributes directly to heuristic scoring weights.
 
 ## Architecture
 
@@ -35,6 +42,8 @@ Parasocial Audit v2 is a full rewrite of the original codebase focused on cleane
 - GET /api/health
 - GET /api/providers
 - GET /api/threshold-profiles
+- GET /api/research-basis
+- POST /api/pii/scrub
 - POST /api/audit
 - POST /api/audit/compare
 - POST /api/sessions
@@ -111,6 +120,25 @@ Use .env.example as reference.
 Required:
 - AUDIT_PROVIDER=local | stub
 
+Security and privacy controls:
+
+- CORS_ALLOWED_ORIGINS
+- API_RATE_LIMIT_MAX
+- API_RATE_LIMIT_WINDOW_MS
+- MAX_TRANSCRIPT_CHARS
+- MAX_NOTES_CHARS
+- ENABLE_HSTS
+- PRIVACY_HASH_RESEARCHER_ID
+- PRIVACY_STORE_RAW_DATA
+- PRIVACY_PII_SCRUBBER_ENABLED
+- RESEARCH_MODEL_ID
+- RESEARCH_MODELS_FILE
+
+Runtime transparency endpoints:
+
+- GET /api/privacy-config
+- GET /api/research-basis
+
 ## Threshold Profiles and Calibration
 
 The local engine now supports profile-driven thresholds:
@@ -132,12 +160,74 @@ Calibration mode compares one transcript against multiple profiles and returns:
 - salience score
 - Griffiths total score
 
+## Psychiatric Research Basis
+
+Heuristic scoring now blends threshold profile coefficients with a psychiatric research evidence model.
+
+Research models are externally configurable via JSON registry:
+
+- config/research-models.json
+- schema: { schemaVersion, models[] }
+- each model carries references plus scoring weights
+
+Server-side resolution and version pinning:
+
+- registry loader: src/server/researchModelRegistry.ts
+- optional model pin: RESEARCH_MODEL_ID
+- optional registry path override: RESEARCH_MODELS_FILE
+
+Current evidence model:
+
+- id: psychiatric-evidence-v1
+- references include foundational addiction-component and I-PACE research, plus attachment/anthropomorphism review grounding.
+
+The scoring engine uses these research-derived weights for:
+
+- Griffiths component coefficients
+- confidence score baseline and scaling terms
+- report-level research rationale output
+
+Every audit now exposes research provenance:
+
+- provenance.researchModelId
+- provenance.researchReferenceCount
+
+Research basis transparency endpoint:
+
+- GET /api/research-basis returns activeModel, pinnedModelId, and availableModels.
+
 ## Scripts
 
 - npm run dev
 - npm run build
 - npm run lint
 - npm run test
+
+## Security and Privacy Measures
+
+The application now enforces a baseline hardening profile:
+
+- HTTP response security headers (CSP, X-Frame-Options, X-Content-Type-Options, referrer policy, permissions policy, cross-origin policies).
+- Optional HSTS in production.
+- Configurable CORS allowlist.
+- In-memory per-IP API rate limiting.
+- Transcript size guardrails.
+- Note sanitization and max-length enforcement.
+- Automated PII redaction for transcript ingestion and stored notes, with per-request finding counts.
+- Optional researcher ID hashing at rest.
+- Optional data minimization mode for stored session payloads.
+
+PII scrubber API:
+
+- POST /api/pii/scrub accepts { text, appendWarning? } and returns redactedText, findings, and totalMatches.
+- POST /api/audit and POST /api/audit/compare now include piiScrubSummary in their response payloads.
+
+Implementation references:
+
+- src/server/security.ts
+- src/server/privacy.ts
+- src/server/createApp.ts
+- src/server/sessionRepository.ts
 
 ## Testing
 

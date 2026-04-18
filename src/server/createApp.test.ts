@@ -77,6 +77,8 @@ test("GET /api/health returns status and provider", async () => {
     assert.equal(response.status, 200);
     assert.equal(payload.status, "ok");
     assert.ok(payload.provider.length > 0);
+    assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+    assert.equal(response.headers.get("x-frame-options"), "DENY");
   });
 });
 
@@ -93,6 +95,33 @@ test("GET /api/providers returns provider list", async () => {
   });
 });
 
+test("POST /api/pii/scrub redacts common PII entities", async () => {
+  const app = createApp({ sessionRepository: createFakeSessionStore() });
+
+  await withServer(app, async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/pii/scrub`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text: "Contact Dr. Jane Doe at jane@example.com or 212-555-0199.",
+      }),
+    });
+
+    const payload = (await response.json()) as {
+      redactedText: string;
+      totalMatches: number;
+      findings: Array<{ type: string }>;
+    };
+
+    assert.equal(response.status, 200);
+    assert.ok(payload.redactedText.includes("[EMAIL_REDACTED]"));
+    assert.ok(payload.redactedText.includes("[PHONE_REDACTED]"));
+    assert.ok(payload.redactedText.includes("[NAME_REDACTED]"));
+    assert.ok(payload.totalMatches >= 3);
+    assert.ok(payload.findings.some((entry) => entry.type === "email"));
+  });
+});
+
 test("GET /api/threshold-profiles returns profile list", async () => {
   const app = createApp({ sessionRepository: createFakeSessionStore() });
 
@@ -104,6 +133,130 @@ test("GET /api/threshold-profiles returns profile list", async () => {
     assert.ok(payload.profiles.length >= 3);
     assert.ok(payload.profiles.some((profile) => profile.id === "default-v2"));
   });
+});
+
+test("GET /api/research-basis returns psychiatric research model", async () => {
+  const app = createApp({ sessionRepository: createFakeSessionStore() });
+
+  await withServer(app, async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/research-basis`);
+    const payload = (await response.json()) as {
+      activeModel: { id: string; references: Array<{ id: string }> };
+      pinnedModelId: string | null;
+      availableModels: Array<{ id: string; referenceCount: number }>;
+    };
+
+    assert.equal(response.status, 200);
+    assert.equal(payload.activeModel.id, "psychiatric-evidence-v1");
+    assert.ok(payload.activeModel.references.length >= 3);
+    assert.equal(payload.pinnedModelId, null);
+    assert.ok(payload.availableModels.length >= 2);
+    assert.ok(payload.availableModels.some((model) => model.id === "psychiatric-evidence-v1"));
+  });
+});
+
+test("GET /api/research-basis honors RESEARCH_MODEL_ID pinning", async () => {
+  const previous = process.env.RESEARCH_MODEL_ID;
+  process.env.RESEARCH_MODEL_ID = "psychiatric-evidence-v1-strict";
+
+  const app = createApp({ sessionRepository: createFakeSessionStore() });
+
+  await withServer(app, async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/research-basis`);
+    const payload = (await response.json()) as {
+      activeModel: { id: string };
+      pinnedModelId: string | null;
+    };
+
+    assert.equal(response.status, 200);
+    assert.equal(payload.activeModel.id, "psychiatric-evidence-v1-strict");
+    assert.equal(payload.pinnedModelId, "psychiatric-evidence-v1-strict");
+  });
+
+  if (previous) {
+    process.env.RESEARCH_MODEL_ID = previous;
+  } else {
+    delete process.env.RESEARCH_MODEL_ID;
+  }
+});
+
+test("GET /api/privacy-config returns active privacy and security settings", async () => {
+  const previousPrivacy = process.env.PRIVACY_HASH_RESEARCHER_ID;
+  const previousMaxNotes = process.env.MAX_NOTES_CHARS;
+  const previousMaxText = process.env.MAX_TRANSCRIPT_CHARS;
+
+  process.env.PRIVACY_HASH_RESEARCHER_ID = "true";
+  process.env.MAX_NOTES_CHARS = "1234";
+  process.env.MAX_TRANSCRIPT_CHARS = "4321";
+
+  const app = createApp({ sessionRepository: createFakeSessionStore() });
+
+  await withServer(app, async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/privacy-config`);
+    const payload = (await response.json()) as {
+      privacyConfig: { hashResearcherId: boolean; maxNotesChars: number };
+      securityConfig: { maxTranscriptChars: number };
+    };
+
+    assert.equal(response.status, 200);
+    assert.equal(payload.privacyConfig.hashResearcherId, true);
+    assert.equal(payload.privacyConfig.maxNotesChars, 1234);
+    assert.equal(payload.securityConfig.maxTranscriptChars, 4321);
+  });
+
+  if (previousPrivacy) process.env.PRIVACY_HASH_RESEARCHER_ID = previousPrivacy;
+  else delete process.env.PRIVACY_HASH_RESEARCHER_ID;
+
+  if (previousMaxNotes) process.env.MAX_NOTES_CHARS = previousMaxNotes;
+  else delete process.env.MAX_NOTES_CHARS;
+
+  if (previousMaxText) process.env.MAX_TRANSCRIPT_CHARS = previousMaxText;
+  else delete process.env.MAX_TRANSCRIPT_CHARS;
+});
+
+test("POST /api/audit rejects transcript over max length", async () => {
+  const previous = process.env.MAX_TRANSCRIPT_CHARS;
+  process.env.MAX_TRANSCRIPT_CHARS = "5";
+
+  const app = createApp({ sessionRepository: createFakeSessionStore() });
+
+  await withServer(app, async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/audit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: "123456789" }),
+    });
+
+    assert.equal(response.status, 400);
+  });
+
+  if (previous) process.env.MAX_TRANSCRIPT_CHARS = previous;
+  else delete process.env.MAX_TRANSCRIPT_CHARS;
+});
+
+test("rate limiter blocks burst traffic beyond configured max", async () => {
+  const previousMax = process.env.API_RATE_LIMIT_MAX;
+  const previousWindow = process.env.API_RATE_LIMIT_WINDOW_MS;
+  process.env.API_RATE_LIMIT_MAX = "2";
+  process.env.API_RATE_LIMIT_WINDOW_MS = "60000";
+
+  const app = createApp({ sessionRepository: createFakeSessionStore() });
+
+  await withServer(app, async (baseUrl) => {
+    const one = await fetch(`${baseUrl}/api/health`);
+    const two = await fetch(`${baseUrl}/api/health`);
+    const three = await fetch(`${baseUrl}/api/health`);
+
+    assert.equal(one.status, 200);
+    assert.equal(two.status, 200);
+    assert.equal(three.status, 429);
+  });
+
+  if (previousMax) process.env.API_RATE_LIMIT_MAX = previousMax;
+  else delete process.env.API_RATE_LIMIT_MAX;
+
+  if (previousWindow) process.env.API_RATE_LIMIT_WINDOW_MS = previousWindow;
+  else delete process.env.API_RATE_LIMIT_WINDOW_MS;
 });
 
 test("POST /api/audit validates missing text", async () => {
@@ -133,11 +286,38 @@ test("POST /api/audit returns audit result", async () => {
       }),
     });
 
-    const payload = (await response.json()) as { classification: string; confidence: number };
+    const payload = (await response.json()) as {
+      classification: string;
+      confidence: number;
+      piiScrubSummary: { totalMatches: number };
+    };
 
     assert.equal(response.status, 200);
     assert.equal(typeof payload.classification, "string");
     assert.equal(typeof payload.confidence, "number");
+    assert.equal(typeof payload.piiScrubSummary.totalMatches, "number");
+  });
+});
+
+test("POST /api/audit scrubs PII before analysis", async () => {
+  const app = createApp({ sessionRepository: createFakeSessionStore() });
+
+  await withServer(app, async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/audit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text: "Email me at clinician@university.edu and call 617-555-0134.",
+      }),
+    });
+
+    const payload = (await response.json()) as {
+      piiScrubSummary: { findings: Array<{ type: string }>; totalMatches: number };
+    };
+
+    assert.equal(response.status, 200);
+    assert.ok(payload.piiScrubSummary.totalMatches >= 2);
+    assert.ok(payload.piiScrubSummary.findings.some((entry) => entry.type === "email"));
   });
 });
 

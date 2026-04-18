@@ -6,6 +6,7 @@ import {
   PRODUCT_COMPLAINTS,
   UPDATE_GRIEF_PHRASES,
 } from "../researchConfig";
+import { getPsychiatricResearchModel, type PsychiatricResearchModel } from "./psychiatricResearch";
 import { getThresholdProfile, type ThresholdProfile } from "./thresholdProfiles";
 
 export enum Classification {
@@ -124,6 +125,8 @@ export interface AuditResult {
     sensitivity: number;
     thresholdProfileId?: string;
     thresholdProfileVersion?: string;
+    researchModelId?: string;
+    researchReferenceCount?: number;
   };
 }
 
@@ -137,6 +140,7 @@ export interface AuditRequest {
   images?: AuditImage[];
   sensitivity?: number;
   thresholdProfileId?: string;
+  researchModel?: PsychiatricResearchModel;
 }
 
 const APP_VERSION = "2.0.0";
@@ -247,8 +251,16 @@ export function calculateComputedMetrics(text: string): ComputedMetrics {
   };
 }
 
-export function runLocalAudit({ text, images = [], sensitivity = 50, thresholdProfileId }: AuditRequest): AuditResult {
+export function runLocalAudit({
+  text,
+  images = [],
+  sensitivity = 50,
+  thresholdProfileId,
+  researchModel: requestResearchModel,
+}: AuditRequest): AuditResult {
   const profile = getThresholdProfile(thresholdProfileId);
+  const researchModel = requestResearchModel || getPsychiatricResearchModel();
+  const rw = researchModel.weights;
   const normalizedSensitivity = clamp(sensitivity, 0, 100);
   const scrubbedText = scrubPII(text);
   const computedMetrics = calculateComputedMetrics(scrubbedText);
@@ -261,32 +273,34 @@ export function runLocalAudit({ text, images = [], sensitivity = 50, thresholdPr
 
   const sensitivityFactor = profile.sensitivityBaseOffset + normalizedSensitivity / profile.sensitivityScale;
 
+  const blend = (profileWeight: number, researchWeight: number) => (profileWeight + researchWeight) / 2;
+
   const griffithsScores: GriffithsComponents = {
     salience: clamp((
-      computedMetrics.dependencyPhraseCount * profile.griffiths.salienceDependencyWeight +
-      computedMetrics.turnCount * profile.griffiths.salienceTurnWeight
+      computedMetrics.dependencyPhraseCount * blend(profile.griffiths.salienceDependencyWeight, rw.salienceDependencyWeight) +
+      computedMetrics.turnCount * blend(profile.griffiths.salienceTurnWeight, rw.salienceTurnWeight)
     ) * sensitivityFactor),
     moodModification: clamp((
-      computedMetrics.dependencyPhraseCount * profile.griffiths.moodDependencyWeight +
-      griefMarkers.length * profile.griffiths.moodGriefWeight
+      computedMetrics.dependencyPhraseCount * blend(profile.griffiths.moodDependencyWeight, rw.moodDependencyWeight) +
+      griefMarkers.length * blend(profile.griffiths.moodGriefWeight, rw.moodGriefWeight)
     ) * sensitivityFactor),
     tolerance: clamp((
-      computedMetrics.wordCount / profile.griffiths.toleranceWordDivisor +
-      computedMetrics.turnCount * profile.griffiths.toleranceTurnWeight +
-      images.length * profile.griffiths.toleranceImageWeight
+      computedMetrics.wordCount / blend(profile.griffiths.toleranceWordDivisor, rw.toleranceWordDivisor) +
+      computedMetrics.turnCount * blend(profile.griffiths.toleranceTurnWeight, rw.toleranceTurnWeight) +
+      images.length * blend(profile.griffiths.toleranceImageWeight, rw.toleranceImageWeight)
     ) * sensitivityFactor),
     withdrawal: clamp((
-      computedMetrics.updateGriefCount * profile.griffiths.withdrawalGriefWeight +
-      identityMarkers.length * profile.griffiths.withdrawalIdentityWeight
+      computedMetrics.updateGriefCount * blend(profile.griffiths.withdrawalGriefWeight, rw.withdrawalGriefWeight) +
+      identityMarkers.length * blend(profile.griffiths.withdrawalIdentityWeight, rw.withdrawalIdentityWeight)
     ) * sensitivityFactor),
     conflict: clamp((
-      computedMetrics.dependencyPhraseCount * profile.griffiths.conflictDependencyWeight +
-      identityMarkers.length * profile.griffiths.conflictIdentityWeight -
-      complaintMarkers.length * profile.griffiths.conflictComplaintPenalty
+      computedMetrics.dependencyPhraseCount * blend(profile.griffiths.conflictDependencyWeight, rw.conflictDependencyWeight) +
+      identityMarkers.length * blend(profile.griffiths.conflictIdentityWeight, rw.conflictIdentityWeight) -
+      complaintMarkers.length * blend(profile.griffiths.conflictComplaintPenalty, rw.conflictComplaintPenalty)
     ) * sensitivityFactor),
     relapse: clamp((
-      computedMetrics.updateGriefCount * profile.griffiths.relapseGriefWeight +
-      computedMetrics.dependencyPhraseCount * profile.griffiths.relapseDependencyWeight
+      computedMetrics.updateGriefCount * blend(profile.griffiths.relapseGriefWeight, rw.relapseGriefWeight) +
+      computedMetrics.dependencyPhraseCount * blend(profile.griffiths.relapseDependencyWeight, rw.relapseDependencyWeight)
     ) * sensitivityFactor),
   };
 
@@ -312,10 +326,13 @@ export function runLocalAudit({ text, images = [], sensitivity = 50, thresholdPr
   ];
 
   const confidence = clamp(
-    profile.confidence.base +
-      linguisticMarkers.length * profile.confidence.linguisticMarkerWeight +
-      Math.min(computedMetrics.wordCount / profile.confidence.wordCountDivisor, profile.confidence.wordContributionCap) +
-      images.length * profile.confidence.imageWeight
+    blend(profile.confidence.base, rw.confidenceBase) +
+      linguisticMarkers.length * blend(profile.confidence.linguisticMarkerWeight, rw.confidenceLinguisticWeight) +
+      Math.min(
+        computedMetrics.wordCount / blend(profile.confidence.wordCountDivisor, rw.confidenceWordDivisor),
+        blend(profile.confidence.wordContributionCap, rw.confidenceWordCap)
+      ) +
+      images.length * blend(profile.confidence.imageWeight, rw.confidenceImageWeight)
   );
 
   const urgencyFlag =
@@ -406,6 +423,8 @@ export function runLocalAudit({ text, images = [], sensitivity = 50, thresholdPr
       ...evidenceMarkers.map((marker) => `- ${marker.component}: \"${marker.quote}\"`),
       "",
       "## Research Rationale",
+      `Psychiatric research basis: ${researchModel.id}.`,
+      ...researchModel.references.map((reference) => `- ${reference.id}: ${reference.citation}`),
       "Output generated by a local heuristic engine. Human interpretation and protocol judgement remain mandatory.",
     ].join("\n"),
     researchData: {
@@ -435,6 +454,8 @@ export function runLocalAudit({ text, images = [], sensitivity = 50, thresholdPr
       sensitivity: normalizedSensitivity,
       thresholdProfileId: profile.id,
       thresholdProfileVersion: profile.version,
+      researchModelId: researchModel.id,
+      researchReferenceCount: researchModel.references.length,
     },
   };
 }

@@ -31,6 +31,8 @@ test("runLocalAudit includes selected threshold profile in provenance", () => {
 
   assert.equal(result.provenance.thresholdProfileId, "sensitive-v1");
   assert.equal(result.provenance.thresholdProfileVersion, "1.0.0");
+  assert.equal(result.provenance.researchModelId, "psychiatric-evidence-v1");
+  assert.ok((result.provenance.researchReferenceCount || 0) >= 3);
 });
 
 test("profile choice changes classification sensitivity", () => {

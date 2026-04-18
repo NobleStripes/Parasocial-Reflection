@@ -1,7 +1,10 @@
-import cors from "cors";
 import express from "express";
 import type { Request, Response } from "express";
 import { getProviderName, getSupportedProviderNames, performAuditAnalysis } from "./auditProvider";
+import { getPrivacyConfig } from "./privacy";
+import { listConfiguredResearchModels, resolveConfiguredResearchModel } from "./researchModelRegistry";
+import { applyCors, applySecurityHeaders, createRateLimiter, getSecurityConfig } from "./security";
+import { scrubPIIText } from "../shared/piiScrubber";
 import { getThresholdProfile, listThresholdProfiles } from "../shared/thresholdProfiles";
 
 export interface SessionStore {
@@ -19,8 +22,12 @@ export interface CreateAppOptions {
 
 export function createApp(options: CreateAppOptions) {
   const app = express();
+  const security = getSecurityConfig();
+  const privacy = getPrivacyConfig();
 
-  app.use(cors());
+  applyCors(app, security);
+  applySecurityHeaders(app, security);
+  app.use(createRateLimiter(security));
   app.use(express.json({ limit: "25mb" }));
 
   app.get("/api/health", (_req: Request, res: Response) => {
@@ -31,26 +38,94 @@ export function createApp(options: CreateAppOptions) {
     res.json({ providers: getSupportedProviderNames() });
   });
 
+  app.get("/api/privacy-config", (_req: Request, res: Response) => {
+    res.json({
+      privacyConfig: {
+        hashResearcherId: privacy.hashResearcherId,
+        storeRawData: privacy.storeRawData,
+        maxNotesChars: privacy.maxNotesChars,
+        piiScrubberEnabled: privacy.piiScrubberEnabled,
+      },
+      securityConfig: {
+        rateLimitWindowMs: security.rateLimitWindowMs,
+        rateLimitMaxRequests: security.rateLimitMaxRequests,
+        maxTranscriptChars: security.maxTranscriptChars,
+      },
+    });
+  });
+
   app.get("/api/threshold-profiles", (_req: Request, res: Response) => {
     res.json({ profiles: listThresholdProfiles() });
   });
 
+  app.post("/api/pii/scrub", (req: Request, res: Response) => {
+    const { text, appendWarning } = req.body ?? {};
+
+    if (typeof text !== "string") {
+      return res.status(400).json({ error: "text is required" });
+    }
+
+    if (!privacy.piiScrubberEnabled) {
+      return res.json({
+        redactedText: text,
+        findings: [],
+        totalMatches: 0,
+        warningAppended: false,
+      });
+    }
+
+    const scrubbed = scrubPIIText(text, appendWarning !== false);
+    return res.json(scrubbed);
+  });
+
+  app.get("/api/research-basis", (_req: Request, res: Response) => {
+    const activeModel = resolveConfiguredResearchModel();
+    const availableModels = listConfiguredResearchModels().map((model) => ({
+      id: model.id,
+      name: model.name,
+      referenceCount: model.references.length,
+    }));
+
+    res.json({
+      activeModel,
+      pinnedModelId: process.env.RESEARCH_MODEL_ID || null,
+      availableModels,
+    });
+  });
+
   app.post("/api/audit", async (req: Request, res: Response) => {
-    const { text, images, sensitivity, thresholdProfileId } = req.body ?? {};
+    const { text, images, sensitivity, thresholdProfileId, researchModelId } = req.body ?? {};
 
     if (typeof text !== "string" || text.trim().length === 0) {
       return res.status(400).json({ error: "text is required" });
     }
 
+    if (text.length > security.maxTranscriptChars) {
+      return res.status(400).json({ error: `text exceeds max length (${security.maxTranscriptChars})` });
+    }
+
     try {
+      const pii = privacy.piiScrubberEnabled
+        ? scrubPIIText(text, false)
+        : { redactedText: text, findings: [], totalMatches: 0, warningAppended: false };
+
       const result = await performAuditAnalysis({
-        text,
+        text: pii.redactedText,
         images: Array.isArray(images) ? images : [],
         sensitivity: typeof sensitivity === "number" ? sensitivity : 50,
         thresholdProfileId: typeof thresholdProfileId === "string" ? thresholdProfileId : undefined,
+        researchModel: resolveConfiguredResearchModel(
+          typeof researchModelId === "string" ? researchModelId : undefined
+        ),
       });
 
-      return res.json(result);
+      return res.json({
+        ...result,
+        piiScrubSummary: {
+          findings: pii.findings,
+          totalMatches: pii.totalMatches,
+        },
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Audit failed";
       return res.status(500).json({ error: message });
@@ -58,10 +133,14 @@ export function createApp(options: CreateAppOptions) {
   });
 
   app.post("/api/audit/compare", async (req: Request, res: Response) => {
-    const { text, images, sensitivity, profileIds } = req.body ?? {};
+    const { text, images, sensitivity, profileIds, researchModelId } = req.body ?? {};
 
     if (typeof text !== "string" || text.trim().length === 0) {
       return res.status(400).json({ error: "text is required" });
+    }
+
+    if (text.length > security.maxTranscriptChars) {
+      return res.status(400).json({ error: `text exceeds max length (${security.maxTranscriptChars})` });
     }
 
     if (!Array.isArray(profileIds) || profileIds.length === 0) {
@@ -69,14 +148,21 @@ export function createApp(options: CreateAppOptions) {
     }
 
     try {
+      const pii = privacy.piiScrubberEnabled
+        ? scrubPIIText(text, false)
+        : { redactedText: text, findings: [], totalMatches: 0, warningAppended: false };
+
       const comparisons = await Promise.all(
         profileIds.map(async (id) => {
           const profileId = typeof id === "string" ? id : "";
           const result = await performAuditAnalysis({
-            text,
+            text: pii.redactedText,
             images: Array.isArray(images) ? images : [],
             sensitivity: typeof sensitivity === "number" ? sensitivity : 50,
             thresholdProfileId: profileId,
+            researchModel: resolveConfiguredResearchModel(
+              typeof researchModelId === "string" ? researchModelId : undefined
+            ),
           });
 
           const profile = getThresholdProfile(profileId);
@@ -93,7 +179,13 @@ export function createApp(options: CreateAppOptions) {
         })
       );
 
-      return res.json({ comparisons });
+      return res.json({
+        comparisons,
+        piiScrubSummary: {
+          findings: pii.findings,
+          totalMatches: pii.totalMatches,
+        },
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Comparison failed";
       return res.status(500).json({ error: message });
