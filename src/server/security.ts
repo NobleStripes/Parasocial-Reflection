@@ -36,7 +36,7 @@ export function applyCors(app: Express, config: SecurityConfig): void {
 
   app.use(
     cors({
-      origin(origin, callback) {
+      origin(origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
         if (!origin || config.corsAllowedOrigins?.includes(origin)) {
           callback(null, true);
           return;
