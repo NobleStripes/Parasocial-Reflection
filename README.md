@@ -117,6 +117,25 @@ From src/server/createApp.ts:
 
 Use .env.example as reference.
 
+Quick local setup:
+
+- Copy .env.example to .env.
+- Set AUDIT_PROVIDER=local for the built-in heuristic engine.
+- Install dependencies with npm install.
+- Start the app with npm run dev.
+
+Local website access:
+
+- Open http://localhost:3000 in your browser.
+- The Express server hosts both the API and the React app on the same port.
+- In development, do not use vite preview for normal app usage; npm run dev is the primary entry point.
+
+LAN access:
+
+- The dev server binds to 0.0.0.0:3000.
+- To open the site from another device on the same network, use http://<your-machine-ip>:3000.
+- If that fails, check Windows Firewall inbound rules for port 3000.
+
 Required:
 - AUDIT_PROVIDER=local | stub
 
@@ -202,6 +221,35 @@ Research basis transparency endpoint:
 - npm run build
 - npm run lint
 - npm run test
+
+## Running The App
+
+From the repository root:
+
+```powershell
+npm install
+Copy-Item .env.example .env
+npm run dev
+```
+
+Then open:
+
+```text
+http://localhost:3000
+```
+
+Notes:
+
+- npm run dev starts the Node/Express server in server.ts, which mounts Vite middleware in development.
+- npm run build creates the production frontend bundle in dist/.
+- npm start runs the server entrypoint, intended for serving the built app in a production-style environment.
+
+## Troubleshooting Website Access
+
+- If the server starts but the browser page is blank, hard-refresh the page and check the browser console.
+- If localhost:3000 does not open, verify that npm run dev is still running and that nothing else is using port 3000.
+- If the API works but another device cannot reach the site, the most common cause is Windows Firewall blocking inbound access.
+- This repository does not create a public website by itself; localhost access is local-only until you deploy it.
 
 ## Security and Privacy Measures
 
