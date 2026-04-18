@@ -53,6 +53,7 @@ function getImageSummary(result: AuditResult) {
 
 export function OutputPanel({ result, griffithsData, heatmapData, comparisonResults }: OutputPanelProps) {
   const imageSummary = result ? getImageSummary(result) : null;
+  const symptomSignals = result?.symptomSignals || [];
 
   return (
     <section className="panel output-panel">
@@ -90,6 +91,25 @@ export function OutputPanel({ result, griffithsData, heatmapData, comparisonResu
                   <span key={`${item.name}-${item.size}`}>{item.name}</span>
                 ))}
               </div>
+            )}
+          </article>
+
+          <article>
+            <h3>Common Dependence Symptoms</h3>
+            {symptomSignals.length === 0 && <p className="empty">No symptom signals were generated for this run.</p>}
+            {symptomSignals.length > 0 && (
+              <ul className="symptom-list">
+                {symptomSignals.map((symptom) => (
+                  <li key={symptom.key}>
+                    <div>
+                      <strong>{symptom.label}</strong>
+                      <p>{symptom.level} signal ({symptom.score}/100)</p>
+                      {symptom.evidence.length > 0 && <p>Evidence: {symptom.evidence.join(", ")}</p>}
+                    </div>
+                    <span className={`symptom-level symptom-${symptom.level.toLowerCase()}`}>{symptom.level}</span>
+                  </li>
+                ))}
+              </ul>
             )}
           </article>
 

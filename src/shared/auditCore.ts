@@ -104,6 +104,15 @@ export interface EvidenceMarker {
   rationale: string;
 }
 
+export interface SymptomSignal {
+  key: string;
+  label: string;
+  score: number;
+  level: "Low" | "Moderate" | "High";
+  detected: boolean;
+  evidence: string[];
+}
+
 export interface ImageSummary {
   count: number;
   screenshotCount: number;
@@ -131,6 +140,7 @@ export interface AuditResult {
   researchData: ResearchData;
   rawTokenAttribution: TokenAttribution[];
   evidenceMarkers: EvidenceMarker[];
+  symptomSignals: SymptomSignal[];
   computedMetrics: ComputedMetrics;
   imageSummary: ImageSummary;
   provenance: {
@@ -271,6 +281,75 @@ function inferRiskLevel(totalGriffiths: number, profile: ThresholdProfile): Rese
   if (totalGriffiths > profile.risk.high) return "High";
   if (totalGriffiths >= profile.risk.moderate) return "Moderate";
   return "Low";
+}
+
+function toSymptomLevel(score: number): SymptomSignal["level"] {
+  if (score >= 70) return "High";
+  if (score >= 35) return "Moderate";
+  return "Low";
+}
+
+function buildSymptomSignals(input: {
+  dependencyMarkers: string[];
+  anthropomorphicMarkers: string[];
+  identityMarkers: string[];
+  griefMarkers: string[];
+  computedMetrics: ComputedMetrics;
+  sensitivityFactor: number;
+}): SymptomSignal[] {
+  const {
+    dependencyMarkers,
+    anthropomorphicMarkers,
+    identityMarkers,
+    griefMarkers,
+    computedMetrics,
+    sensitivityFactor,
+  } = input;
+
+  const mk = (key: string, label: string, rawScore: number, evidence: string[]): SymptomSignal => {
+    const score = clamp(rawScore);
+    return {
+      key,
+      label,
+      score,
+      level: toSymptomLevel(score),
+      detected: score >= 35,
+      evidence,
+    };
+  };
+
+  return [
+    mk(
+      "anthropomorphism",
+      "Anthropomorphism",
+      (anthropomorphicMarkers.length * 26 + computedMetrics.anthropomorphicCount * 18) * sensitivityFactor,
+      anthropomorphicMarkers
+    ),
+    mk(
+      "emotional-dependency",
+      "Emotional Dependency",
+      (dependencyMarkers.length * 24 + computedMetrics.dependencyPhraseCount * 16) * sensitivityFactor,
+      dependencyMarkers
+    ),
+    mk(
+      "identity-fusion",
+      "Identity Fusion",
+      (identityMarkers.length * 25 + computedMetrics.pronounRatio * 13) * sensitivityFactor,
+      identityMarkers
+    ),
+    mk(
+      "change-distress",
+      "Withdrawal / Change Distress",
+      (griefMarkers.length * 28 + computedMetrics.updateGriefCount * 19) * sensitivityFactor,
+      griefMarkers
+    ),
+    mk(
+      "compulsive-engagement",
+      "Compulsive Engagement",
+      (computedMetrics.turnCount * 5 + computedMetrics.wordCount / 8 + computedMetrics.dependencyPhraseCount * 9) * sensitivityFactor,
+      dependencyMarkers.slice(0, 2)
+    ),
+  ];
 }
 
 function collectEvidence(text: string, evidenceLimit: number): EvidenceMarker[] {
@@ -415,6 +494,14 @@ export function runLocalAudit({
   const classification = inferClassification(totalScore, profile);
   const classificationLabel = resolveClassificationLabel(classification, profile, totalScore);
   const evidenceMarkers = collectEvidence(scrubbedText, profile.evidenceLimit);
+  const symptomSignals = buildSymptomSignals({
+    dependencyMarkers,
+    anthropomorphicMarkers,
+    identityMarkers,
+    griefMarkers,
+    computedMetrics,
+    sensitivityFactor,
+  });
 
   const linguisticMarkers = [
     ...dependencyMarkers,
@@ -518,6 +605,9 @@ export function runLocalAudit({
       "## Framework Alignment",
       `Salience ${griffithsScores.salience}, Mood Modification ${griffithsScores.moodModification}, Tolerance ${griffithsScores.tolerance}, Withdrawal ${griffithsScores.withdrawal}, Conflict ${griffithsScores.conflict}, Relapse ${griffithsScores.relapse}.`,
       "",
+      "## Dependence Symptom Signals",
+      ...symptomSignals.map((symptom) => `- ${symptom.label}: ${symptom.level} (${symptom.score}/100)`),
+      "",
       "## Evidence Highlights",
       ...evidenceMarkers.map((marker) => `- ${marker.component}: \"${marker.quote}\"`),
       "",
@@ -545,6 +635,7 @@ export function runLocalAudit({
       { heuristic: "product-complaints", phrases: complaintMarkers },
     ],
     evidenceMarkers,
+    symptomSignals,
     computedMetrics,
     imageSummary,
     provenance: {

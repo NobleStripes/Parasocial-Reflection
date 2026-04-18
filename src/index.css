@@ -434,6 +434,61 @@ pre {
   font-size: 0.8rem;
 }
 
+.symptom-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.symptom-list li {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 10px;
+  background: #fffcf5;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.symptom-list strong {
+  font-size: 0.84rem;
+}
+
+.symptom-list p {
+  margin: 3px 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.symptom-level {
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 0.74rem;
+  font-family: "IBM Plex Mono", monospace;
+  border: 1px solid transparent;
+}
+
+.symptom-high {
+  background: #fee2e2;
+  color: #7f1d1d;
+  border-color: #fecaca;
+}
+
+.symptom-moderate {
+  background: #fef3c7;
+  color: #92400e;
+  border-color: #fde68a;
+}
+
+.symptom-low {
+  background: #e7f7ef;
+  color: #166534;
+  border-color: #bbf7d0;
+}
+
 .history-list {
   margin: 0;
   padding: 0;
