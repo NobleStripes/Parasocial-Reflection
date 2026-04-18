@@ -36,7 +36,7 @@ export default function App() {
   return (
     <div className="app-shell">
       <header className="hero">
-        <p className="kicker">Parasocial Audit v2</p>
+        <p className="kicker">Interaction Pattern Studio</p>
         <h1>Behavior Signal Studio</h1>
         <p>
           A rewritten research workspace for transcript triage, provider-pluggable analysis, and reproducible

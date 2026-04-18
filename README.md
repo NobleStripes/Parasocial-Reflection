@@ -1,6 +1,6 @@
-﻿# Parasocial Audit v2
+﻿# Interaction Pattern Studio
 
-Parasocial Audit v2 is a full rewrite of the original codebase focused on cleaner architecture, provider-pluggable analysis, and a new study workspace UI.
+Interaction Pattern Studio is a full rewrite of the original codebase focused on cleaner architecture, provider-pluggable analysis, and a new study workspace UI.
 
 ## Audience Restriction
 

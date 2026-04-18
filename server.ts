@@ -39,7 +39,7 @@ async function startServer() {
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Parasocial Audit v2 listening on 0.0.0.0:${PORT}`);
+    console.log(`Interaction Pattern Studio listening on 0.0.0.0:${PORT}`);
   });
 }
 
