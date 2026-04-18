@@ -50,15 +50,20 @@ export function applyCors(app: Express, config: SecurityConfig): void {
 
 export function applySecurityHeaders(app: Express, config: SecurityConfig): void {
   app.use((req: Request, res: Response, next: NextFunction) => {
+    const isProduction = process.env.NODE_ENV === "production";
+    const contentSecurityPolicy = isProduction
+      ? "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; script-src 'self'; connect-src 'self'"
+      : "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; script-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss:";
+
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("X-Frame-Options", "DENY");
     res.setHeader("Referrer-Policy", "no-referrer");
     res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
     res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
     res.setHeader("Cross-Origin-Resource-Policy", "same-origin");
-    res.setHeader("Content-Security-Policy", "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; script-src 'self'; connect-src 'self'");
+    res.setHeader("Content-Security-Policy", contentSecurityPolicy);
 
-    if (config.enableHsts && process.env.NODE_ENV === "production") {
+    if (config.enableHsts && isProduction) {
       res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
     }
 
