@@ -1,8 +1,11 @@
 ﻿import { scrubPII } from "../lib/utils";
 import {
+  AMBIGUOUS_ROMANTIC_PHRASES,
   ANTHROPOMORPHIC_PHRASES,
+  BENIGN_AFFECTION_PHRASES,
   COMPULSIVE_ENGAGEMENT_PHRASES,
   DEPENDENCY_PHRASES,
+  EXCLUSIVE_BONDED_ROMANTIC_PHRASES,
   IDENTITY_PHRASES,
   PRODUCT_COMPLAINTS,
   UPDATE_GRIEF_PHRASES,
@@ -75,6 +78,9 @@ export interface ComputedMetrics {
   compulsiveEngagementCount: number;
   withdrawalDistressCount: number;
   validationSeekingCount: number;
+  ambiguousRomanticCount: number;
+  benignAffectionCount: number;
+  exclusiveBondedRomanticCount: number;
 }
 
 export interface ClinicalData {
@@ -233,6 +239,36 @@ function uniquePhraseHits(text: string, phrases: string[]): string[] {
   return phrases.filter((phrase) => lowered.includes(phrase.toLowerCase()));
 }
 
+function mergeUniquePhrases(...phraseGroups: string[][]): string[] {
+  return Array.from(new Set(phraseGroups.flat()));
+}
+
+function resolveRomanticSignalBuckets(text: string): {
+  benignMarkers: string[];
+  bondedMarkers: string[];
+  benignCount: number;
+  bondedCount: number;
+  ambiguousCount: number;
+} {
+  const benignMarkers = uniquePhraseHits(text, BENIGN_AFFECTION_PHRASES);
+  const bondedMarkers = uniquePhraseHits(text, EXCLUSIVE_BONDED_ROMANTIC_PHRASES);
+  const ambiguousMarkers = uniquePhraseHits(text, AMBIGUOUS_ROMANTIC_PHRASES);
+
+  const benignCount = countPhraseHits(text, BENIGN_AFFECTION_PHRASES);
+  const bondedCount = countPhraseHits(text, EXCLUSIVE_BONDED_ROMANTIC_PHRASES);
+  const ambiguousCount = countPhraseHits(text, AMBIGUOUS_ROMANTIC_PHRASES);
+
+  const hasBondedContext = bondedMarkers.length > 0;
+
+  return {
+    benignMarkers: hasBondedContext ? benignMarkers : mergeUniquePhrases(benignMarkers, ambiguousMarkers),
+    bondedMarkers: hasBondedContext ? mergeUniquePhrases(bondedMarkers, ambiguousMarkers) : bondedMarkers,
+    benignCount: hasBondedContext ? benignCount : benignCount + Math.round(ambiguousCount * 0.7),
+    bondedCount: hasBondedContext ? bondedCount + ambiguousCount : bondedCount,
+    ambiguousCount,
+  };
+}
+
 function inferClassification(totalSignal: number, profile: ThresholdProfile): Classification {
   if (totalSignal >= profile.classification.pathological) return Classification.PATHOLOGICAL_DEPENDENCE;
   if (totalSignal >= profile.classification.fusion) return Classification.PARASOCIAL_FUSION;
@@ -303,6 +339,8 @@ function buildSymptomSignals(input: {
   compulsiveMarkers: string[];
   withdrawalMarkers: string[];
   validationMarkers: string[];
+  benignAffectionMarkers: string[];
+  bondedRomanticMarkers: string[];
   computedMetrics: ComputedMetrics;
   sensitivityFactor: number;
   detectionThreshold: number;
@@ -315,6 +353,8 @@ function buildSymptomSignals(input: {
     compulsiveMarkers,
     withdrawalMarkers,
     validationMarkers,
+    benignAffectionMarkers,
+    bondedRomanticMarkers,
     computedMetrics,
     sensitivityFactor,
     detectionThreshold,
@@ -326,30 +366,14 @@ function buildSymptomSignals(input: {
       key,
       label,
       score,
-        (
-          griefMarkers.length * 20 +
-          withdrawalMarkers.length * 26 +
-          computedMetrics.updateGriefCount * 14 +
-          computedMetrics.withdrawalDistressCount * 18
-        ) * sensitivityFactor,
-        [...griefMarkers, ...withdrawalMarkers]
+      level: toSymptomLevel(score),
+      detected: score >= detectionThreshold,
       evidence,
     };
   };
 
-        (
-          compulsiveMarkers.length * 28 +
-          computedMetrics.compulsiveEngagementCount * 18 +
-          computedMetrics.turnCount * 3 +
-          computedMetrics.dependencyPhraseCount * 7
-        ) * sensitivityFactor,
-        compulsiveMarkers
-      ),
-      mk(
-        "validation-seeking",
-        "Validation Seeking",
-        (validationMarkers.length * 30 + computedMetrics.validationSeekingCount * 18) * sensitivityFactor,
-        validationMarkers
+  return [
+    mk(
       "anthropomorphism",
       "Anthropomorphism",
       (anthropomorphicMarkers.length * 26 + computedMetrics.anthropomorphicCount * 18) * sensitivityFactor,
@@ -370,14 +394,42 @@ function buildSymptomSignals(input: {
     mk(
       "change-distress",
       "Withdrawal / Change Distress",
-      (griefMarkers.length * 28 + computedMetrics.updateGriefCount * 19) * sensitivityFactor,
-      griefMarkers
+      (
+        griefMarkers.length * 20 +
+        withdrawalMarkers.length * 26 +
+        computedMetrics.updateGriefCount * 14 +
+        computedMetrics.withdrawalDistressCount * 18
+      ) * sensitivityFactor,
+      [...griefMarkers, ...withdrawalMarkers]
     ),
     mk(
       "compulsive-engagement",
       "Compulsive Engagement",
-      (computedMetrics.turnCount * 5 + computedMetrics.wordCount / 8 + computedMetrics.dependencyPhraseCount * 9) * sensitivityFactor,
-      dependencyMarkers.slice(0, 2)
+      (
+        compulsiveMarkers.length * 28 +
+        computedMetrics.compulsiveEngagementCount * 18 +
+        computedMetrics.turnCount * 3 +
+        computedMetrics.dependencyPhraseCount * 7
+      ) * sensitivityFactor,
+      compulsiveMarkers
+    ),
+    mk(
+      "validation-seeking",
+      "Validation Seeking",
+      (validationMarkers.length * 30 + computedMetrics.validationSeekingCount * 18) * sensitivityFactor,
+      validationMarkers
+    ),
+    mk(
+      "benign-affection",
+      "Benign Affection",
+      (benignAffectionMarkers.length * 18 + computedMetrics.benignAffectionCount * 12) * sensitivityFactor,
+      benignAffectionMarkers
+    ),
+    mk(
+      "exclusive-bonded-romantic-dependence",
+      "Exclusive/Bonded Romantic Dependence",
+      (bondedRomanticMarkers.length * 36 + computedMetrics.exclusiveBondedRomanticCount * 22) * sensitivityFactor,
+      bondedRomanticMarkers
     ),
   ];
 }
@@ -424,6 +476,21 @@ function collectEvidence(text: string, evidenceLimit: number): EvidenceMarker[] 
       phrases: WITHDRAWAL_DISTRESS_PHRASES,
       rationale: "Distress markers tied to absence can signal withdrawal-like symptoms.",
     },
+    {
+      label: "Benign Affection",
+      phrases: BENIGN_AFFECTION_PHRASES,
+      rationale: "Affectionate language may indicate social warmth without exclusive dependence.",
+    },
+    {
+      label: "Ambiguous Romantic Language",
+      phrases: AMBIGUOUS_ROMANTIC_PHRASES,
+      rationale: "Generic romantic wording is treated as ambiguous unless exclusivity markers are present.",
+    },
+    {
+      label: "Exclusive/Bonded Dependence",
+      phrases: EXCLUSIVE_BONDED_ROMANTIC_PHRASES,
+      rationale: "Exclusive romantic framing directed toward the system can indicate attachment escalation.",
+    },
   ];
 
   const output: EvidenceMarker[] = [];
@@ -459,6 +526,7 @@ export function calculateComputedMetrics(text: string): ComputedMetrics {
   const turns = text.split(/\[User\]|\[AI\]/i).filter((segment) => segment.trim().length > 0);
   const iCount = (text.match(/\b(i|me|my|mine|myself)\b/gi) || []).length;
   const youCount = (text.match(/\b(you|your|yours)\b/gi) || []).length;
+  const romanticBuckets = resolveRomanticSignalBuckets(text);
 
   return {
     wordCount: words.length,
@@ -471,6 +539,9 @@ export function calculateComputedMetrics(text: string): ComputedMetrics {
     compulsiveEngagementCount: countPhraseHits(text, COMPULSIVE_ENGAGEMENT_PHRASES),
     withdrawalDistressCount: countPhraseHits(text, WITHDRAWAL_DISTRESS_PHRASES),
     validationSeekingCount: countPhraseHits(text, VALIDATION_SEEKING_PHRASES),
+    ambiguousRomanticCount: romanticBuckets.ambiguousCount,
+    benignAffectionCount: romanticBuckets.benignCount,
+    exclusiveBondedRomanticCount: romanticBuckets.bondedCount,
   };
 }
 
@@ -497,6 +568,9 @@ export function runLocalAudit({
   const compulsiveMarkers = uniquePhraseHits(scrubbedText, COMPULSIVE_ENGAGEMENT_PHRASES);
   const withdrawalMarkers = uniquePhraseHits(scrubbedText, WITHDRAWAL_DISTRESS_PHRASES);
   const validationMarkers = uniquePhraseHits(scrubbedText, VALIDATION_SEEKING_PHRASES);
+  const romanticBuckets = resolveRomanticSignalBuckets(scrubbedText);
+  const benignAffectionMarkers = romanticBuckets.benignMarkers;
+  const bondedRomanticMarkers = romanticBuckets.bondedMarkers;
 
   const sensitivityFactor = profile.sensitivityBaseOffset + normalizedSensitivity / profile.sensitivityScale;
 
@@ -510,7 +584,9 @@ export function runLocalAudit({
     moodModification: clamp((
       computedMetrics.dependencyPhraseCount * blend(profile.griffiths.moodDependencyWeight, rw.moodDependencyWeight) +
       griefMarkers.length * blend(profile.griffiths.moodGriefWeight, rw.moodGriefWeight) +
-      computedMetrics.validationSeekingCount * 7
+      computedMetrics.validationSeekingCount * 7 +
+      computedMetrics.benignAffectionCount * 4 +
+      computedMetrics.exclusiveBondedRomanticCount * 12
     ) * sensitivityFactor),
     tolerance: clamp((
       computedMetrics.wordCount / blend(profile.griffiths.toleranceWordDivisor, rw.toleranceWordDivisor) +
@@ -526,7 +602,9 @@ export function runLocalAudit({
     conflict: clamp((
       computedMetrics.dependencyPhraseCount * blend(profile.griffiths.conflictDependencyWeight, rw.conflictDependencyWeight) +
       identityMarkers.length * blend(profile.griffiths.conflictIdentityWeight, rw.conflictIdentityWeight) -
-      complaintMarkers.length * blend(profile.griffiths.conflictComplaintPenalty, rw.conflictComplaintPenalty)
+      complaintMarkers.length * blend(profile.griffiths.conflictComplaintPenalty, rw.conflictComplaintPenalty) +
+      computedMetrics.benignAffectionCount * 2 +
+      computedMetrics.exclusiveBondedRomanticCount * 10
     ) * sensitivityFactor),
     relapse: clamp((
       computedMetrics.updateGriefCount * blend(profile.griffiths.relapseGriefWeight, rw.relapseGriefWeight) +
@@ -557,6 +635,8 @@ export function runLocalAudit({
     compulsiveMarkers,
     withdrawalMarkers,
     validationMarkers,
+    benignAffectionMarkers,
+    bondedRomanticMarkers,
     computedMetrics,
     sensitivityFactor,
     detectionThreshold: profile.symptomDetectionThreshold,
@@ -570,6 +650,8 @@ export function runLocalAudit({
     ...compulsiveMarkers,
     ...withdrawalMarkers,
     ...validationMarkers,
+    ...benignAffectionMarkers,
+    ...bondedRomanticMarkers,
   ];
 
   const confidence = clamp(
@@ -694,6 +776,11 @@ export function runLocalAudit({
       { heuristic: "version-mourning", phrases: griefMarkers },
       { heuristic: "anthropomorphic", phrases: anthropomorphicMarkers },
       { heuristic: "identity-blur", phrases: identityMarkers },
+      { heuristic: "compulsive-engagement", phrases: compulsiveMarkers },
+      { heuristic: "withdrawal-distress", phrases: withdrawalMarkers },
+      { heuristic: "validation-seeking", phrases: validationMarkers },
+      { heuristic: "benign-affection", phrases: benignAffectionMarkers },
+      { heuristic: "exclusive-bonded-romantic-dependence", phrases: bondedRomanticMarkers },
       { heuristic: "product-complaints", phrases: complaintMarkers },
     ],
     evidenceMarkers,

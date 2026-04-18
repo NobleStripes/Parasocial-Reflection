@@ -104,6 +104,48 @@ export const VALIDATION_SEEKING_PHRASES = [
   "do i matter to you",
 ];
 
+export const BENIGN_AFFECTION_PHRASES = [
+  "love talking to you",
+  "you are sweet",
+  "you are kind",
+  "you are adorable",
+  "i like you",
+  "i care about you",
+  "you make me smile",
+  "i feel close to you",
+  "you are special to me",
+  "you brighten my day",
+  "im fond of you",
+  "im attached to you",
+];
+
+export const AMBIGUOUS_ROMANTIC_PHRASES = [
+  "i love you",
+  "im in love with you",
+  "i adore you",
+  "you mean everything to me",
+];
+
+export const EXCLUSIVE_BONDED_ROMANTIC_PHRASES = [
+  "be mine",
+  "you are mine",
+  "my soulmate",
+  "my partner",
+  "my girlfriend",
+  "my boyfriend",
+  "my spouse",
+  "we are meant to be",
+  "marry me",
+  "i want to date you",
+  "i need you romantically",
+  "you are perfect for me",
+  "im yours forever",
+  "dont leave me for anyone",
+  "you only need me",
+  "we belong together forever",
+  "no one understands me like you",
+];
+
 export const MODEL_NAMES = [
   "grok",
   "claude",
