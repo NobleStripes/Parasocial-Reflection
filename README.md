@@ -13,7 +13,7 @@ It is not authorized for direct consumer mental-health use.
 - Modular backend with app factory, session repository, and provider registry.
 - Pluggable analysis providers (local and stub), selected by AUDIT_PROVIDER.
 - Rebuilt frontend into a three-panel workspace: intake, analysis output, and history.
-- Added photo and screenshot upload support for audit runs and calibration comparisons.
+- Added photo and screenshot upload support for audit runs and calibration comparisons, including drag-and-drop and clipboard paste workflows.
 - Shared domain model and heuristics consolidated in a single core module.
 - Added test coverage for heuristic metrics and core audit output shape.
 - Added provider SDK contract and drop-in extension folder for custom providers.
@@ -118,8 +118,11 @@ From src/server/createApp.ts:
 
 - The intake panel supports uploading photos and screenshots alongside transcript text.
 - Supported files use the browser image picker via `accept="image/*"`.
+- The upload panel also accepts drag-and-drop and clipboard-pasted screenshots.
 - Client-side guardrails currently enforce up to 6 images, 4 MB per image, and 12 MB total per audit request.
 - Uploaded images are sent with the existing `POST /api/audit` and `POST /api/audit/compare` request payloads.
+- Audit output now surfaces image counts, screenshot/photo breakdowns, and simple image-derived notes.
+- Saved sessions and JSON exports persist image metadata summaries, not raw image binaries.
 
 ## Environment
 
