@@ -1,10 +1,13 @@
 ﻿import { scrubPII } from "../lib/utils";
 import {
   ANTHROPOMORPHIC_PHRASES,
+  COMPULSIVE_ENGAGEMENT_PHRASES,
   DEPENDENCY_PHRASES,
   IDENTITY_PHRASES,
   PRODUCT_COMPLAINTS,
   UPDATE_GRIEF_PHRASES,
+  VALIDATION_SEEKING_PHRASES,
+  WITHDRAWAL_DISTRESS_PHRASES,
 } from "../researchConfig";
 import { getPsychiatricResearchModel, type PsychiatricResearchModel } from "./psychiatricResearch";
 import { getThresholdProfile, type ThresholdProfile } from "./thresholdProfiles";
@@ -69,6 +72,9 @@ export interface ComputedMetrics {
   updateGriefCount: number;
   productComplaintCount: number;
   anthropomorphicCount: number;
+  compulsiveEngagementCount: number;
+  withdrawalDistressCount: number;
+  validationSeekingCount: number;
 }
 
 export interface ClinicalData {
@@ -294,6 +300,9 @@ function buildSymptomSignals(input: {
   anthropomorphicMarkers: string[];
   identityMarkers: string[];
   griefMarkers: string[];
+  compulsiveMarkers: string[];
+  withdrawalMarkers: string[];
+  validationMarkers: string[];
   computedMetrics: ComputedMetrics;
   sensitivityFactor: number;
   detectionThreshold: number;
@@ -303,6 +312,9 @@ function buildSymptomSignals(input: {
     anthropomorphicMarkers,
     identityMarkers,
     griefMarkers,
+    compulsiveMarkers,
+    withdrawalMarkers,
+    validationMarkers,
     computedMetrics,
     sensitivityFactor,
     detectionThreshold,
@@ -314,14 +326,30 @@ function buildSymptomSignals(input: {
       key,
       label,
       score,
-      level: toSymptomLevel(score),
-      detected: score >= detectionThreshold,
+        (
+          griefMarkers.length * 20 +
+          withdrawalMarkers.length * 26 +
+          computedMetrics.updateGriefCount * 14 +
+          computedMetrics.withdrawalDistressCount * 18
+        ) * sensitivityFactor,
+        [...griefMarkers, ...withdrawalMarkers]
       evidence,
     };
   };
 
-  return [
-    mk(
+        (
+          compulsiveMarkers.length * 28 +
+          computedMetrics.compulsiveEngagementCount * 18 +
+          computedMetrics.turnCount * 3 +
+          computedMetrics.dependencyPhraseCount * 7
+        ) * sensitivityFactor,
+        compulsiveMarkers
+      ),
+      mk(
+        "validation-seeking",
+        "Validation Seeking",
+        (validationMarkers.length * 30 + computedMetrics.validationSeekingCount * 18) * sensitivityFactor,
+        validationMarkers
       "anthropomorphism",
       "Anthropomorphism",
       (anthropomorphicMarkers.length * 26 + computedMetrics.anthropomorphicCount * 18) * sensitivityFactor,
@@ -381,6 +409,21 @@ function collectEvidence(text: string, evidenceLimit: number): EvidenceMarker[] 
       phrases: IDENTITY_PHRASES,
       rationale: "Shared identity language may indicate boundary blurring.",
     },
+    {
+      label: "Compulsive Engagement",
+      phrases: COMPULSIVE_ENGAGEMENT_PHRASES,
+      rationale: "Repeated high-frequency contact language can indicate compulsive use patterns.",
+    },
+    {
+      label: "Validation Seeking",
+      phrases: VALIDATION_SEEKING_PHRASES,
+      rationale: "Reassurance-seeking language may indicate dependence on conversational validation.",
+    },
+    {
+      label: "Withdrawal Distress",
+      phrases: WITHDRAWAL_DISTRESS_PHRASES,
+      rationale: "Distress markers tied to absence can signal withdrawal-like symptoms.",
+    },
   ];
 
   const output: EvidenceMarker[] = [];
@@ -425,6 +468,9 @@ export function calculateComputedMetrics(text: string): ComputedMetrics {
     updateGriefCount: countPhraseHits(text, UPDATE_GRIEF_PHRASES),
     productComplaintCount: countPhraseHits(text, PRODUCT_COMPLAINTS),
     anthropomorphicCount: countPhraseHits(text, ANTHROPOMORPHIC_PHRASES),
+    compulsiveEngagementCount: countPhraseHits(text, COMPULSIVE_ENGAGEMENT_PHRASES),
+    withdrawalDistressCount: countPhraseHits(text, WITHDRAWAL_DISTRESS_PHRASES),
+    validationSeekingCount: countPhraseHits(text, VALIDATION_SEEKING_PHRASES),
   };
 }
 
@@ -448,6 +494,9 @@ export function runLocalAudit({
   const complaintMarkers = uniquePhraseHits(scrubbedText, PRODUCT_COMPLAINTS);
   const anthropomorphicMarkers = uniquePhraseHits(scrubbedText, ANTHROPOMORPHIC_PHRASES);
   const identityMarkers = uniquePhraseHits(scrubbedText, IDENTITY_PHRASES);
+  const compulsiveMarkers = uniquePhraseHits(scrubbedText, COMPULSIVE_ENGAGEMENT_PHRASES);
+  const withdrawalMarkers = uniquePhraseHits(scrubbedText, WITHDRAWAL_DISTRESS_PHRASES);
+  const validationMarkers = uniquePhraseHits(scrubbedText, VALIDATION_SEEKING_PHRASES);
 
   const sensitivityFactor = profile.sensitivityBaseOffset + normalizedSensitivity / profile.sensitivityScale;
 
@@ -460,16 +509,19 @@ export function runLocalAudit({
     ) * sensitivityFactor),
     moodModification: clamp((
       computedMetrics.dependencyPhraseCount * blend(profile.griffiths.moodDependencyWeight, rw.moodDependencyWeight) +
-      griefMarkers.length * blend(profile.griffiths.moodGriefWeight, rw.moodGriefWeight)
+      griefMarkers.length * blend(profile.griffiths.moodGriefWeight, rw.moodGriefWeight) +
+      computedMetrics.validationSeekingCount * 7
     ) * sensitivityFactor),
     tolerance: clamp((
       computedMetrics.wordCount / blend(profile.griffiths.toleranceWordDivisor, rw.toleranceWordDivisor) +
       computedMetrics.turnCount * blend(profile.griffiths.toleranceTurnWeight, rw.toleranceTurnWeight) +
+      computedMetrics.compulsiveEngagementCount * 8 +
       images.length * blend(profile.griffiths.toleranceImageWeight, rw.toleranceImageWeight)
     ) * sensitivityFactor),
     withdrawal: clamp((
       computedMetrics.updateGriefCount * blend(profile.griffiths.withdrawalGriefWeight, rw.withdrawalGriefWeight) +
-      identityMarkers.length * blend(profile.griffiths.withdrawalIdentityWeight, rw.withdrawalIdentityWeight)
+      identityMarkers.length * blend(profile.griffiths.withdrawalIdentityWeight, rw.withdrawalIdentityWeight) +
+      computedMetrics.withdrawalDistressCount * 10
     ) * sensitivityFactor),
     conflict: clamp((
       computedMetrics.dependencyPhraseCount * blend(profile.griffiths.conflictDependencyWeight, rw.conflictDependencyWeight) +
@@ -478,7 +530,8 @@ export function runLocalAudit({
     ) * sensitivityFactor),
     relapse: clamp((
       computedMetrics.updateGriefCount * blend(profile.griffiths.relapseGriefWeight, rw.relapseGriefWeight) +
-      computedMetrics.dependencyPhraseCount * blend(profile.griffiths.relapseDependencyWeight, rw.relapseDependencyWeight)
+      computedMetrics.dependencyPhraseCount * blend(profile.griffiths.relapseDependencyWeight, rw.relapseDependencyWeight) +
+      computedMetrics.compulsiveEngagementCount * 9
     ) * sensitivityFactor),
   };
 
@@ -501,6 +554,9 @@ export function runLocalAudit({
     anthropomorphicMarkers,
     identityMarkers,
     griefMarkers,
+    compulsiveMarkers,
+    withdrawalMarkers,
+    validationMarkers,
     computedMetrics,
     sensitivityFactor,
     detectionThreshold: profile.symptomDetectionThreshold,
@@ -511,6 +567,9 @@ export function runLocalAudit({
     ...griefMarkers,
     ...anthropomorphicMarkers,
     ...identityMarkers,
+    ...compulsiveMarkers,
+    ...withdrawalMarkers,
+    ...validationMarkers,
   ];
 
   const confidence = clamp(
