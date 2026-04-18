@@ -1,6 +1,14 @@
-import type { AuditRequest, AuditResult } from "../shared/auditCore";
-import { runLocalAudit } from "../shared/auditCore";
+﻿import type { AuditRequest, AuditResult } from "../shared/auditCore";
+import { analyzeWithProvider, listProviderNames, resolveProvider } from "../providers/providerRegistry";
 
 export async function performAuditAnalysis(request: AuditRequest): Promise<AuditResult> {
-  return runLocalAudit(request);
+  return analyzeWithProvider(request);
+}
+
+export function getProviderName(): string {
+  return resolveProvider().name;
+}
+
+export function getSupportedProviderNames(): string[] {
+  return listProviderNames();
 }

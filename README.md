@@ -1,43 +1,68 @@
-# Parasocial Audit Lab: Research Support for AI Interaction Analysis
+﻿# Parasocial Audit v2
 
-Parasocial Audit Lab (PAL) is a research support instrument designed to assist in the study of human–AI interaction patterns. By applying heuristic linguistic mapping and directly computed metrics to interaction transcripts, the tool identifies behavioral markers to support research into relational dynamics and dependency within established frameworks like the Component Model of Addiction (Griffiths, 2005) and the I-PACE model (Brand et al., 2019).
+Parasocial Audit v2 is a full rewrite of the original codebase focused on cleaner architecture, provider-pluggable analysis, and a new study workspace UI.
 
-## 🔬 Methodology: Computed vs. Inferred Metrics
+## What Changed
 
-PAL employs a dual-layer analysis pipeline to ensure research transparency:
+- Modular backend with app factory, session repository, and provider registry.
+- Pluggable analysis providers (local and stub), selected by AUDIT_PROVIDER.
+- Rebuilt frontend into a three-panel workspace: intake, analysis output, and history.
+- Shared domain model and heuristics consolidated in a single core module.
+- Added test coverage for heuristic metrics and core audit output shape.
+- Added provider SDK contract and drop-in extension folder for custom providers.
+- Added API contract tests for health, providers, audit, session persistence, and export endpoints.
+- Split UI into feature-level hook and panel components for maintainability.
 
-### 1. Directly Computed Metrics (Hard Data)
-These values are calculated algorithmically from the raw source text before any AI inference occurs:
-*   **Word/Turn Count**: Quantitative interaction volume.
-*   **Pronoun Ratio**: I/Me vs. You/AI frequency (Identity Blurring proxy).
-*   **Phrase Frequency**: Recurrence of high-signal dependency and update-grief markers.
-*   **Linguistic Complexity**: Average word length and syntactic density.
+## Architecture
 
-### 2. Heuristic Inferred Metrics (Model Interpretation)
-These values are produced by the app's configurable analysis engine, which currently defaults to a local heuristic provider:
-*   **Griffiths Six Mapping**: Heuristic scoring of Salience, Mood Modification, Tolerance, Withdrawal, Conflict, and Relapse.
-*   **IMAGINE Framework**: Qualitative vectors for Identity, Mirroring, Affective Loop, Reality Gaps, Intimacy Illusion, Non-Reciprocity, and Escalation.
-*   **Relational Classification**: Heuristic categorization of the interaction mode (e.g., Functional Utility vs. Parasocial Fusion).
+- server.ts: bootstraps the HTTP server and Vite middleware.
+- src/server/createApp.ts: defines API routes and request validation.
+- src/server/sessionRepository.ts: SQLite persistence and flat export projection.
+- src/server/auditProvider.ts: provider resolution and audit execution.
+- src/providers/contracts/auditProviderContract.ts: provider SDK interface.
+- src/providers/providerRegistry.ts: provider registration/resolution.
+- src/providers/custom/README.md: custom provider drop-in guidance.
+- src/shared/auditCore.ts: scoring engine, evidence extraction, and result schema.
+- src/services/auditService.ts: frontend API client.
+- src/features/workspace/hooks/useAuditWorkspace.ts: feature state and async orchestration.
+- src/features/workspace/components/*.tsx: intake/output/history UI panels.
+- src/App.tsx: workspace composition shell.
 
-## 📋 Ethical Use & Research Integrity
+## API Endpoints
 
-*   **Data Integrity**: Every session generates a SHA-256 hash, ensuring that the transcript and resulting analysis remain consistent for research documentation.
-*   **Automated De-identification**: The tool includes a local PII scrubber that redacts names, locations, financial data, and network identifiers. 
-    *   **WARNING**: Automated scrubbing is incomplete. Human review is mandatory for full de-identification before publication.
-*   **Analyst Oversight**: The interface includes an "Analyst Notes" field to allow researchers to record human interpretations and context, which are included in all exports.
-*   **IRB Compliance**: Researchers are responsible for ensuring all data ingested into this tool was obtained through informed consent and adheres to Institutional Review Board (IRB) standards.
+- GET /api/health
+- GET /api/providers
+- POST /api/audit
+- POST /api/sessions
+- GET /api/sessions/:researcherId
+- GET /api/export/json
 
-## 🛠 Research Features
-*   **Heuristic Radar Chart**: A visualization mapping the six components of addiction for exploratory analysis.
-*   **Linguistic Evidence Log**: Extracts transcript quotes tied to specific heuristic markers with traceable rationales.
-*   **Provenance Metadata**: All exports include model version, app version, timestamp, and sensitivity settings for reproducibility.
-*   **Multi-Format Export**: PDF (Case Report Form), CSV (Statistical Analysis), and JSON (Data Interchange).
+## Environment
 
-## 🛠 Technical Stack
-*   **Analysis Engine**: Local heuristic provider via the backend audit service.
-*   **Visualization**: Recharts & Framer Motion.
-*   **Data Security**: SHA-256 Hashing & Local PII Scrubbing.
+Use .env.example as reference.
 
----
+Required:
+- AUDIT_PROVIDER=local | stub
 
-**Disclaimer**: This tool is a research support instrument. It is intended for use by qualified researchers and should not be used as a standalone diagnostic tool for clinical assessment or treatment. All outputs are researcher-facing analytic aids and do not constitute diagnostic conclusions.
+## Scripts
+
+- npm run dev
+- npm run build
+- npm run lint
+- npm run test
+
+## Testing
+
+Current tests target domain logic:
+
+- src/shared/auditCore.test.ts
+- src/server/auditProvider.test.ts
+- src/server/createApp.test.ts
+
+Run:
+
+npm run test
+
+## Disclaimer
+
+This software is a research support tool. It is not a diagnostic system and should only be used with appropriate human oversight and ethics controls.

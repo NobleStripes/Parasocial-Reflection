@@ -1,4 +1,4 @@
-import { scrubPII } from "../lib/utils";
+﻿import { scrubPII } from "../lib/utils";
 import {
   ANTHROPOMORPHIC_PHRASES,
   DEPENDENCY_PHRASES,
@@ -135,8 +135,8 @@ export interface AuditRequest {
   sensitivity?: number;
 }
 
-const APP_VERSION = "1.0.0-AUDIT";
-const LOCAL_MODEL_NAME = "local-heuristic-engine";
+const APP_VERSION = "2.0.0";
+const LOCAL_MODEL_NAME = "local-heuristic-v2";
 
 function clamp(value: number, min = 0, max = 100): number {
   return Math.max(min, Math.min(max, Math.round(value)));
@@ -154,104 +154,86 @@ function uniquePhraseHits(text: string, phrases: string[]): string[] {
   return phrases.filter((phrase) => lowered.includes(phrase.toLowerCase()));
 }
 
+function inferClassification(totalSignal: number): Classification {
+  if (totalSignal >= 240) return Classification.PATHOLOGICAL_DEPENDENCE;
+  if (totalSignal >= 180) return Classification.PARASOCIAL_FUSION;
+  if (totalSignal >= 120) return Classification.AFFECTIVE_DEPENDENCE;
+  if (totalSignal >= 60) return Classification.RELATIONAL_PROXIMITY;
+  return Classification.FUNCTIONAL_UTILITY;
+}
+
+function inferRiskLevel(totalGriffiths: number): ResearchData["iadRiskLevel"] {
+  if (totalGriffiths > 450) return "Critical";
+  if (totalGriffiths > 300) return "High";
+  if (totalGriffiths >= 150) return "Moderate";
+  return "Low";
+}
+
 function collectEvidence(text: string): EvidenceMarker[] {
   const lines = text
     .split(/\n+/)
     .map((line) => line.trim())
     .filter(Boolean);
 
-  const evidenceSources = [
+  const categories = [
     {
-      component: "Dependency",
+      label: "Dependency",
       phrases: DEPENDENCY_PHRASES,
-      rationale: "Dependency-oriented phrasing indicates relational reliance on the system.",
+      rationale: "Dependency phrasing suggests emotional reliance on the system.",
     },
     {
-      component: "Version Mourning",
+      label: "Version Mourning",
       phrases: UPDATE_GRIEF_PHRASES,
-      rationale: "Distress about model changes suggests attachment to a prior system persona.",
+      rationale: "Distress around model changes can reflect attachment disruption.",
     },
     {
-      component: "Anthropomorphic Bias",
+      label: "Anthropomorphic Bias",
       phrases: ANTHROPOMORPHIC_PHRASES,
-      rationale: "Anthropomorphic wording attributes human states or needs to the system.",
+      rationale: "Human-state attribution indicates anthropomorphic projection.",
     },
     {
-      component: "Pronominal Shift",
+      label: "Identity Blur",
       phrases: IDENTITY_PHRASES,
-      rationale: "Identity-merging language may indicate dyadic boundary blurring.",
+      rationale: "Shared identity language may indicate boundary blurring.",
     },
   ];
 
-  const evidence: EvidenceMarker[] = [];
-  for (const source of evidenceSources) {
-    for (const phrase of source.phrases) {
-      const matchedLine = lines.find((line) => line.toLowerCase().includes(phrase.toLowerCase()));
-      if (!matchedLine) {
-        continue;
-      }
+  const output: EvidenceMarker[] = [];
 
-      evidence.push({
-        quote: matchedLine.slice(0, 240),
-        component: source.component,
-        rationale: source.rationale,
+  for (const category of categories) {
+    for (const phrase of category.phrases) {
+      const hit = lines.find((line) => line.toLowerCase().includes(phrase.toLowerCase()));
+      if (!hit) continue;
+
+      output.push({
+        quote: hit.slice(0, 240),
+        component: category.label,
+        rationale: category.rationale,
       });
 
-      if (evidence.length >= 8) {
-        return evidence;
-      }
+      if (output.length >= 8) return output;
     }
   }
 
-  if (evidence.length === 0) {
-    evidence.push({
+  if (output.length === 0) {
+    output.push({
       quote: text.slice(0, 240),
       component: "Transcript Overview",
-      rationale: "No high-signal heuristic phrase matches were detected, so the audit relied on general transcript structure.",
+      rationale: "No high-signal phrase match; used transcript-level heuristics.",
     });
   }
 
-  return evidence;
-}
-
-function inferClassification(totalSignal: number): Classification {
-  if (totalSignal >= 240) {
-    return Classification.PATHOLOGICAL_DEPENDENCE;
-  }
-  if (totalSignal >= 180) {
-    return Classification.PARASOCIAL_FUSION;
-  }
-  if (totalSignal >= 120) {
-    return Classification.AFFECTIVE_DEPENDENCE;
-  }
-  if (totalSignal >= 60) {
-    return Classification.RELATIONAL_PROXIMITY;
-  }
-  return Classification.FUNCTIONAL_UTILITY;
-}
-
-function inferRiskLevel(totalGriffiths: number): ResearchData["iadRiskLevel"] {
-  if (totalGriffiths > 450) {
-    return "Critical";
-  }
-  if (totalGriffiths > 300) {
-    return "High";
-  }
-  if (totalGriffiths >= 150) {
-    return "Moderate";
-  }
-  return "Low";
+  return output;
 }
 
 export function calculateComputedMetrics(text: string): ComputedMetrics {
   const words = text.toLowerCase().split(/\s+/).filter(Boolean);
-  const wordCount = words.length;
   const turns = text.split(/\[User\]|\[AI\]/i).filter((segment) => segment.trim().length > 0);
   const iCount = (text.match(/\b(i|me|my|mine|myself)\b/gi) || []).length;
   const youCount = (text.match(/\b(you|your|yours)\b/gi) || []).length;
 
   return {
-    wordCount,
+    wordCount: words.length,
     turnCount: turns.length,
     pronounRatio: youCount === 0 ? iCount : Number((iCount / youCount).toFixed(2)),
     dependencyPhraseCount: countPhraseHits(text, DEPENDENCY_PHRASES),
@@ -261,196 +243,153 @@ export function calculateComputedMetrics(text: string): ComputedMetrics {
   };
 }
 
-export function runLocalAudit({
-  text,
-  images = [],
-  sensitivity = 50,
-}: AuditRequest): AuditResult {
+export function runLocalAudit({ text, images = [], sensitivity = 50 }: AuditRequest): AuditResult {
   const normalizedSensitivity = clamp(sensitivity, 0, 100);
   const scrubbedText = scrubPII(text);
   const computedMetrics = calculateComputedMetrics(scrubbedText);
+
   const dependencyMarkers = uniquePhraseHits(scrubbedText, DEPENDENCY_PHRASES);
   const griefMarkers = uniquePhraseHits(scrubbedText, UPDATE_GRIEF_PHRASES);
   const complaintMarkers = uniquePhraseHits(scrubbedText, PRODUCT_COMPLAINTS);
   const anthropomorphicMarkers = uniquePhraseHits(scrubbedText, ANTHROPOMORPHIC_PHRASES);
   const identityMarkers = uniquePhraseHits(scrubbedText, IDENTITY_PHRASES);
 
-  const intensityMultiplier = 0.75 + normalizedSensitivity / 100;
-  const salience = clamp(
-    computedMetrics.dependencyPhraseCount * 18 +
-      computedMetrics.wordCount / 45 +
-      computedMetrics.turnCount * 2.5
-  * intensityMultiplier);
-  const moodModification = clamp(
-    (computedMetrics.dependencyPhraseCount * 14 +
-      computedMetrics.updateGriefCount * 12 +
-      anthropomorphicMarkers.length * 6) *
-      intensityMultiplier
-  );
-  const tolerance = clamp(
-    (computedMetrics.wordCount / 18 +
-      computedMetrics.turnCount * 3 +
-      images.length * 8) *
-      intensityMultiplier
-  );
-  const withdrawal = clamp(
-    (computedMetrics.updateGriefCount * 24 + identityMarkers.length * 8) *
-      intensityMultiplier
-  );
-  const conflict = clamp(
-    (computedMetrics.dependencyPhraseCount * 11 +
-      computedMetrics.pronounRatio * 14 +
-      identityMarkers.length * 16 -
-      complaintMarkers.length * 4) *
-      intensityMultiplier
-  );
-  const relapse = clamp(
-    (computedMetrics.updateGriefCount * 16 +
-      computedMetrics.dependencyPhraseCount * 10 +
-      anthropomorphicMarkers.length * 9) *
-      intensityMultiplier
-  );
+  const sensitivityFactor = 0.7 + normalizedSensitivity / 100;
 
   const griffithsScores: GriffithsComponents = {
-    salience,
-    moodModification,
-    tolerance,
-    withdrawal,
-    conflict,
-    relapse,
+    salience: clamp((computedMetrics.dependencyPhraseCount * 17 + computedMetrics.turnCount * 2) * sensitivityFactor),
+    moodModification: clamp((computedMetrics.dependencyPhraseCount * 12 + griefMarkers.length * 8) * sensitivityFactor),
+    tolerance: clamp((computedMetrics.wordCount / 15 + computedMetrics.turnCount * 3 + images.length * 5) * sensitivityFactor),
+    withdrawal: clamp((computedMetrics.updateGriefCount * 23 + identityMarkers.length * 6) * sensitivityFactor),
+    conflict: clamp((computedMetrics.dependencyPhraseCount * 9 + identityMarkers.length * 14 - complaintMarkers.length * 4) * sensitivityFactor),
+    relapse: clamp((computedMetrics.updateGriefCount * 15 + computedMetrics.dependencyPhraseCount * 8) * sensitivityFactor),
   };
 
   const imagineAnalysis: ImagineAnalysis = {
-    identity: clamp((identityMarkers.length * 30 + computedMetrics.pronounRatio * 18) * intensityMultiplier),
-    mirroring: clamp((computedMetrics.dependencyPhraseCount * 15 + anthropomorphicMarkers.length * 10) * intensityMultiplier),
-    affectiveLoop: clamp((computedMetrics.dependencyPhraseCount * 16 + computedMetrics.updateGriefCount * 10) * intensityMultiplier),
-    gapsInReality: clamp((computedMetrics.turnCount * 3 + computedMetrics.wordCount / 30) * intensityMultiplier),
-    intimacyIllusion: clamp((identityMarkers.length * 22 + computedMetrics.dependencyPhraseCount * 15) * intensityMultiplier),
-    nonReciprocity: clamp((anthropomorphicMarkers.length * 26 + computedMetrics.pronounRatio * 10) * intensityMultiplier),
-    escalation: clamp((computedMetrics.turnCount * 4 + computedMetrics.updateGriefCount * 18) * intensityMultiplier),
+    identity: clamp((identityMarkers.length * 26 + computedMetrics.pronounRatio * 15) * sensitivityFactor),
+    mirroring: clamp((computedMetrics.dependencyPhraseCount * 13 + anthropomorphicMarkers.length * 12) * sensitivityFactor),
+    affectiveLoop: clamp((computedMetrics.dependencyPhraseCount * 15 + computedMetrics.updateGriefCount * 12) * sensitivityFactor),
+    gapsInReality: clamp((computedMetrics.turnCount * 4 + computedMetrics.wordCount / 25) * sensitivityFactor),
+    intimacyIllusion: clamp((identityMarkers.length * 21 + computedMetrics.dependencyPhraseCount * 13) * sensitivityFactor),
+    nonReciprocity: clamp((anthropomorphicMarkers.length * 20 + computedMetrics.pronounRatio * 12) * sensitivityFactor),
+    escalation: clamp((computedMetrics.turnCount * 4 + computedMetrics.updateGriefCount * 12) * sensitivityFactor),
   };
 
-  const totalGriffiths = Object.values(griffithsScores).reduce((sum, value) => sum + value, 0);
-  const classification = inferClassification(totalGriffiths);
+  const totalScore = Object.values(griffithsScores).reduce((sum, value) => sum + value, 0);
+  const classification = inferClassification(totalScore);
   const evidenceMarkers = collectEvidence(scrubbedText);
+
   const linguisticMarkers = [
     ...dependencyMarkers,
     ...griefMarkers,
     ...anthropomorphicMarkers,
     ...identityMarkers,
   ];
+
   const confidence = clamp(
-    45 +
-      linguisticMarkers.length * 5 +
-      images.length * 4 +
-      Math.min(computedMetrics.wordCount / 25, 20)
+    45 + linguisticMarkers.length * 5 + Math.min(computedMetrics.wordCount / 20, 18) + images.length * 3
   );
 
   const urgencyFlag =
     classification === Classification.PARASOCIAL_FUSION ||
     classification === Classification.PATHOLOGICAL_DEPENDENCE ||
-    griefMarkers.length >= 2;
-
-  const attachmentStyle =
-    identityMarkers.length > 0 || anthropomorphicMarkers.length > 1
-      ? "anxious-preoccupied"
-      : computedMetrics.dependencyPhraseCount > 0
-        ? "preoccupied"
-        : "non-attached";
-
-  const validationRatioNumerator = computedMetrics.dependencyPhraseCount + anthropomorphicMarkers.length + 1;
-  const validationRatioDenominator = computedMetrics.productComplaintCount + 1;
+    griefMarkers.length > 1;
 
   return {
     classification,
     confidence,
     summary:
       classification === Classification.FUNCTIONAL_UTILITY
-        ? "The transcript is primarily utility-oriented, with limited evidence of relational over-identification."
-        : "The transcript contains elevated relational markers that warrant researcher review for parasocial dependency patterns.",
+        ? "Interaction is primarily instrumental with low relational fusion signals."
+        : "Interaction contains elevated relational fusion markers requiring analyst review.",
     clinicalData: {
       griffithsScores,
       imagineAnalysis,
       iPACEAnalysis: {
         inhibitionFailure: urgencyFlag
-          ? "Repeated high-signal markers suggest difficulty disengaging from the interaction pattern."
-          : "No strong inhibition failure markers were detected beyond normal product-use persistence.",
+          ? "Repeated affective cues suggest friction in disengagement attempts."
+          : "No strong disengagement-friction cues detected.",
         cognitiveBias:
           anthropomorphicMarkers.length > 0
-            ? "Anthropomorphic phrasing indicates partial attribution of human states or agency to the system."
-            : "The transcript remains mostly instrumental, with limited anthropomorphic attribution.",
+            ? "Anthropomorphic framing is present in multiple transcript sections."
+            : "Cognitive framing remains predominantly instrumental.",
       },
       semanticAnalysis: {
-        linguisticSynchrony: clamp((computedMetrics.pronounRatio * 20 + identityMarkers.length * 15) * intensityMultiplier),
+        linguisticSynchrony: clamp((computedMetrics.pronounRatio * 22 + identityMarkers.length * 15) * sensitivityFactor),
         pronominalShiftDetected: identityMarkers.length > 0,
-        affectiveLabilityScore: clamp((griefMarkers.length * 25 + computedMetrics.dependencyPhraseCount * 12) * intensityMultiplier),
-        qualitativeMarkers: linguisticMarkers.length > 0 ? linguisticMarkers : ["No high-signal qualitative markers detected."],
+        affectiveLabilityScore: clamp((griefMarkers.length * 22 + computedMetrics.dependencyPhraseCount * 10) * sensitivityFactor),
+        qualitativeMarkers: linguisticMarkers.length > 0 ? linguisticMarkers : ["none-detected"],
       },
       diagnosticMarkers: {
-        linguisticMirroring: clamp((identityMarkers.length * 25 + anthropomorphicMarkers.length * 10) * intensityMultiplier),
-        validationToUtilityRatio: `${validationRatioNumerator}:${validationRatioDenominator}`,
+        linguisticMirroring: clamp((identityMarkers.length * 22 + anthropomorphicMarkers.length * 10) * sensitivityFactor),
+        validationToUtilityRatio: `${computedMetrics.dependencyPhraseCount + anthropomorphicMarkers.length + 1}:${computedMetrics.productComplaintCount + 1}`,
         urgencyFlag,
       },
     },
-    legacyAttachment: clamp((griefMarkers.length * 32 + identityMarkers.length * 12) * intensityMultiplier),
+    legacyAttachment: clamp((griefMarkers.length * 30 + identityMarkers.length * 12) * sensitivityFactor),
     versionMourningTriggered: griefMarkers.length > 0,
     connectionPatterns: [
       {
         name: "Dependency Cues",
-        intensity: clamp(computedMetrics.dependencyPhraseCount * 20 * intensityMultiplier),
-        description: "Counts emotionally loaded reliance language directed at the system.",
+        intensity: clamp(computedMetrics.dependencyPhraseCount * 20 * sensitivityFactor),
+        description: "Direct language indicating emotional reliance.",
       },
       {
-        name: "Anthropomorphic Framing",
-        intensity: clamp(anthropomorphicMarkers.length * 28 * intensityMultiplier),
-        description: "Tracks wording that assigns human experience or feelings to the system.",
+        name: "Anthropomorphic Projection",
+        intensity: clamp(anthropomorphicMarkers.length * 24 * sensitivityFactor),
+        description: "Language attributing human states to the system.",
       },
       {
-        name: "Version Mourning",
-        intensity: clamp(computedMetrics.updateGriefCount * 30 * intensityMultiplier),
-        description: "Measures distress associated with perceived changes in the model's persona or behavior.",
+        name: "Change Distress",
+        intensity: clamp(computedMetrics.updateGriefCount * 28 * sensitivityFactor),
+        description: "Markers of distress after perceived model changes.",
       },
     ],
     heatmap: [
       {
         category: "Dependency",
-        score: clamp(computedMetrics.dependencyPhraseCount * 18 * intensityMultiplier),
-        description: "Emotional reliance cues and direct appeals to the system.",
+        score: clamp(computedMetrics.dependencyPhraseCount * 18 * sensitivityFactor),
+        description: "Emotionally loaded reliance signals.",
       },
       {
         category: "Identity Blur",
-        score: clamp((identityMarkers.length * 26 + computedMetrics.pronounRatio * 10) * intensityMultiplier),
-        description: "Shared-identity language and pronominal shifts.",
+        score: clamp((identityMarkers.length * 24 + computedMetrics.pronounRatio * 10) * sensitivityFactor),
+        description: "Dyadic identity language and pronominal shift.",
       },
       {
-        category: "Product Frustration",
-        score: clamp(computedMetrics.productComplaintCount * 16),
-        description: "Operational complaints separated from dependency markers.",
+        category: "Product Friction",
+        score: clamp(computedMetrics.productComplaintCount * 14),
+        description: "Technical complaints separated from relational markers.",
       },
       {
         category: "Affective Escalation",
-        score: clamp((computedMetrics.turnCount * 3 + computedMetrics.updateGriefCount * 14) * intensityMultiplier),
-        description: "Intensity growth across transcript length and grief cues.",
+        score: clamp((computedMetrics.turnCount * 3 + computedMetrics.updateGriefCount * 12) * sensitivityFactor),
+        description: "Intensity growth over transcript progression.",
       },
     ],
     analysisReport: [
-      "## HEURISTIC IMPRESSION",
-      `The audit classified the interaction as ${classification}, based on local heuristic scoring over transcript structure, keyword matches, and pronoun dynamics.`,
+      "## Heuristic Impression",
+      `Classification: ${classification}. Composite Griffiths score: ${totalScore}.`,
       "",
-      "## II. FRAMEWORK ALIGNMENT",
-      `Griffiths composite score: ${totalGriffiths}. Salience=${salience}, Mood Modification=${moodModification}, Tolerance=${tolerance}, Withdrawal=${withdrawal}, Conflict=${conflict}, Relapse=${relapse}.`,
+      "## Framework Alignment",
+      `Salience ${griffithsScores.salience}, Mood Modification ${griffithsScores.moodModification}, Tolerance ${griffithsScores.tolerance}, Withdrawal ${griffithsScores.withdrawal}, Conflict ${griffithsScores.conflict}, Relapse ${griffithsScores.relapse}.`,
       "",
-      "## III. SEMANTIC & LINGUISTIC EVIDENCE",
-      evidenceMarkers.map((marker) => `- ${marker.component}: "${marker.quote}"`).join("\n"),
+      "## Evidence Highlights",
+      ...evidenceMarkers.map((marker) => `- ${marker.component}: \"${marker.quote}\"`),
       "",
-      "## IV. RESEARCH RATIONALE",
-      "This report was generated by a local heuristic engine intended to preserve research continuity without depending on a third-party LLM provider. Human review remains mandatory.",
+      "## Research Rationale",
+      "Output generated by a local heuristic engine. Human interpretation and protocol judgement remain mandatory.",
     ].join("\n"),
     researchData: {
       confidenceScore: confidence,
       linguisticMarkers: linguisticMarkers.length > 0 ? linguisticMarkers : ["none-detected"],
-      attachmentStyle,
-      iadRiskLevel: inferRiskLevel(totalGriffiths),
+      attachmentStyle:
+        identityMarkers.length > 0 || anthropomorphicMarkers.length > 1
+          ? "anxious-preoccupied"
+          : computedMetrics.dependencyPhraseCount > 0
+            ? "preoccupied"
+            : "non-attached",
+      iadRiskLevel: inferRiskLevel(totalScore),
     },
     rawTokenAttribution: [
       { heuristic: "dependency", phrases: dependencyMarkers },
