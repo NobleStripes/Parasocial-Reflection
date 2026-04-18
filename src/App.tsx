@@ -37,9 +37,9 @@ export default function App() {
     <div className="app-shell">
       <header className="hero">
         <p className="kicker">Interaction Pattern Studio</p>
-        <h1>Behavior Signal Studio</h1>
+        <h1>Research Workspace</h1>
         <p>
-          A rewritten research workspace for transcript triage, provider-pluggable analysis, and reproducible
+          A psychiatry-informed workspace for transcript triage, provider-pluggable analysis, and reproducible
           session capture.
         </p>
       </header>
